@@ -207,11 +207,19 @@ if check_password():
         col3.metric("የወጣ ጠቅላላ ወጪ", f"{total_expenses} ብር")
         
         st.write("---")
-        st.subheader("የደንበኞች ወቅታዊ የሂሳብ ዝርዝር")
-        if dube_mezgebiya:
-            st.dataframe(pd.DataFrame.from_dict(dube_mezgebiya, orient="index"), use_container_width=True)
+        st.subheader("የደንበኞች ወቅታዊ የሂሳብ ዝርዝር (ዕዳ ያለባቸው ብቻ)")
+        
+        # 🔍 እዚህ ጋር ሂሳባቸው ከ 0 በላይ የሆኑትን ብቻ ነጥሎ የማውጫ ፊልተር ተሰርቷል
+        active_dube = {}
+        for name, v in dube_mezgebiya.items():
+            qeri_total = v.get('yedere_dube', 0) + v.get('original', 0) - v.get('paid', 0)
+            if qeri_total > 0:
+                active_dube[name] = v
+                
+        if active_dube:
+            st.dataframe(pd.DataFrame.from_dict(active_dube, orient="index"), use_container_width=True)
         else:
-            st.info("ምንም የደንበኛ መዝገብ የለም።")
+            st.success("🎉 በአሁኑ ሰዓት ምንም ያልተሰበሰበ የዱቤ ዕዳ የለም! ሁሉም ደንበኞች ከፍለው ጨርሰዋል።")
 
     # --- 📝 [1] አዲስ ዱቤ ---
     elif choice == "📝 [1] አዲስ ዱቤ":
@@ -357,8 +365,6 @@ if check_password():
         
         if all_s:
             sel_staff = st.selectbox("የማን ሰራተኛ ሪፖርት ይታይ?", all_s)
-            
-            # ሰራተኛውን እና የሪፖርት መታወቂያውን (Record ID) አብሮ መያዝ ማጥፋት እንዲሰራ
             staff_recs = sorted([(r_id, r) for r_id, r in staff_history.items() if r.get('staff_name') == sel_staff], key=lambda x: x[1].get('date', ''), reverse=True)
             
             rep_rows = []
@@ -371,9 +377,8 @@ if check_password():
                 })
             st.dataframe(pd.DataFrame(rep_rows), use_container_width=True)
             
-            st.subheader(f"📅 የ {sel_staff} የዕለት ዝርዝር መረጃ ")
+            st.subheader(f"📅 የ {sel_staff} የዕለት ዝርዝር መረጃ (ያልተፈለገውን ቀን መርጠው ማጥፊያ)")
             for r_id, rec in staff_recs:
-                # የእያንዳንዱ ቀን ሪፖርት በተናጠል ይዘረጋል
                 with st.expander(f"📅 የዕለት ሪፖርት ቀን፦ {rec.get('date','')}"):
                     col_info, col_del = st.columns([4, 1.5])
                     with col_info:
@@ -385,7 +390,6 @@ if check_password():
                             for n_n, n_a in rec["today_dube_details"].items(): st.write(f"🔸 {n_n}: {n_a} ዳቦ ወስዷል")
                         st.write(f"📊 **የቀኑ ማጠቃለያ፦** የተጠበቀ ብር: {rec.get('expected_birr',0)} | የገባ ብር: {rec.get('actual_birr',0)} | ልዩነት: {rec.get('diff',0)}")
                     with col_del:
-                        # የተበላሸውን የዚህን ቀን ሪፖርት ብቻ ነጥሎ ማጥፊያ
                         if st.button("🗑️ ይህንን የዛሬውን ሪፖርት ብቻ አጥፋ", key=f"del_staff_{r_id}"):
                             delete_staff_record(r_id)
                             st.warning(f"⚠️ የ ቀን {rec.get('date','')} የተበላሸው ሪፖርት ብቻ ተሰርዟል!")
@@ -402,7 +406,6 @@ if check_password():
             "[3] የሰራተኛ የወሰደው (Morning Load) ወይም የመለሰው ዳቦ ለመቀየር"
         ])
         
-        # --- [3] የወሰደው ወይም የመለሰው መቀየር ---
         if opt_main.startswith("[3]"):
             s_name = st.text_input("የሰራተኛውን ስም ያስገቡ (ለምሳሌ፦ አስቴር):").strip().capitalize()
             matches = [(r_id, r) for r_id, r in staff_history.items() if r.get('staff_name') == s_name]
@@ -429,7 +432,6 @@ if check_password():
                     st.success("✅ የወሰደው/የመለሰው ዳቦ በተሳካ ሁኔታ ተስተካክሏል!")
                     st.rerun()
 
-        # --- [2] ያስረከበው ብር መቀየር ---
         elif opt_main.startswith("[2]"):
             s_name = st.text_input("የሰራተኛውን ስም ያስገቡ:").strip().capitalize()
             matches = [(r_id, r) for r_id, r in staff_history.items() if r.get('staff_name') == s_name]
@@ -448,7 +450,6 @@ if check_password():
                     st.success("✅ ያስረከበው ብር በተሳካ ሁኔታ ተስተካክሏል!")
                     st.rerun()
 
-        # --- [1] የደንበኛ ሂሳብ መቀየር ---
         elif opt_main.startswith("[1]"):
             name = st.text_input("የደንበኛ ስም ያስገቡ (የተሳሳተ ወይም የተረሳው ደንበኛ):").strip()
             s_name = st.text_input("የሰራተኛው ስም ያስገቡ:").strip().capitalize()
