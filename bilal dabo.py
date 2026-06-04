@@ -153,7 +153,7 @@ def check_password():
         password = st.text_input("የይለፍ ቃል (Password)", type="password", key="password_login")
         
         if st.button("🚪 ግባ (Login)"):
-            if username == "bilal" and password == "dabo123":
+            if username == "bilal" and password == "dabo1234":
                 st.session_state.authenticated = True
                 st.rerun()
             else:
