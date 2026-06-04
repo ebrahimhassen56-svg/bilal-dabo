@@ -371,7 +371,7 @@ if check_password():
                 })
             st.dataframe(pd.DataFrame(rep_rows), use_container_width=True)
             
-            st.subheader(f"📅 የ {sel_staff} የዕለት ዝርዝር መረጃ (ያልተፈለገውን ቀን መርጠው ማጥፊያ)")
+            st.subheader(f"📅 የ {sel_staff} የዕለት ዝርዝር መረጃ ")
             for r_id, rec in staff_recs:
                 # የእያንዳንዱ ቀን ሪፖርት በተናጠል ይዘረጋል
                 with st.expander(f"📅 የዕለት ሪፖርት ቀን፦ {rec.get('date','')}"):
