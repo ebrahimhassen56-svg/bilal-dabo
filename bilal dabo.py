@@ -210,6 +210,7 @@ if check_password():
             st.success("🎉 በአሁኑ ሰዓት ምንም ያልተሰበሰበ የዳቦ ዕዳ የለም! ሁሉም ደንበኞች ከፍለው ጨርሰዋል።")
     # --- 📝 [1] አዲስ ዱቤ ---
     # --- 📝 [1] አዲስ ዱቤ ---
+    # --- 📝 [1] አዲስ ዱቤ ---
     elif choice == "📝 [1] አዲስ ዱቤ":
         st.header("📝 አዲስ ዱቤ መመዝገቢያ")
         
@@ -229,45 +230,57 @@ if check_password():
                 st.rerun()
 
         st.write("---")
-        st.subheader("🔄 አሁን የተመዘገቡ የዛሬ አዲስ ዱቤዎች ማስተካከያ (ገና ስራ ያልተዘጋ)")
+        st.subheader("🔄 የደንበኞች ጠቅላላ ዕዳ ማስተካከያ (ማንኛውንም ዕዳ ያለበትን ሰው ለመቀየር)")
         
-        # 2. ዛሬ የተመዘገቡትን ብቻ ለይቶ ማውጫ (original > 0 የሆኑትን)
-        today_active_custs = {k: v for k, v in dube_mezgebiya.items() if v.get('original', 0) > 0}
+        # 2. ዕዳ ያለባቸውን ደንበኞች በሙሉ ለይቶ ማውጫ (ጠቅላላ ዕዳቸው ከ 0 በላይ የሆኑትን)
+        active_debtors = {}
+        for k, v in dube_mezgebiya.items():
+            total_debt = (v.get('original', 0) + v.get('yedere_dube', 0)) - v.get('paid', 0)
+            if total_debt > 0:
+                active_debtors[k] = total_debt
         
-        if today_active_custs:
-            st.info("💡 ስራ ከመዘጋቱ በፊት የተሳሳቱትን ሂሳብ እዚህ ጋር መቀየር ወይም ሙሉ በሙሉ ማጥፋት ይችላሉ።")
+        if active_debtors:
+            st.info("💡 ዕዳ ካለባቸው ደንበኞች ውስጥ የፈለጉትን መርጠው ጠቅላላ የዳቦ መጠኑን እዚህ ማስተካከል ይችላሉ።")
             
             # ደንበኛ መምረጫ
-            edit_name = st.selectbox("ማስተካከል የሚፈልጉትን ደንበኛ ስም ይምረጡ፦", list(today_active_custs.keys()))
-            current_val = dube_mezgebiya[edit_name]['original']
+            edit_name = st.selectbox("ማስተካከል የሚፈልጉትን ደንበኛ ስም ይምረጡ፦", list(active_debtors.keys()))
+            current_total = active_debtors[edit_name]
             
-            st.warning(f"👉 '{edit_name}' አሁን የተመዘገበለት አዲስ ዱቤ መጠን፦ {current_val} ዳቦ ነው")
+            st.warning(f"👉 '{edit_name}' አሁን ያለበት ጠቅላላ ያልተከፈለ ዕዳ፦ {current_total} ዳቦ ነው")
             
             # አዲስ ማስተካከያ ቁጥር ማስገቢያ
-            new_val = st.number_input("ትክክለኛውን የተስተካከለ የዳቦ ብዛት ያስገቡ፦", min_value=0, step=1, value=int(current_val))
+            new_total_val = st.number_input("ትክክለኛውን የተስተካከለ ጠቅላላ የዳቦ ብዛት ያስገቡ፦", min_value=0, step=1, value=int(current_total))
             
             col_save, col_del = st.columns(2)
             
             with col_save:
-                if st.button("💾 ቁጥሩን አስተካክል (ቀይር)"):
-                    if new_val == 0:
+                if st.button("💾 የዳቦ መጠን አስተካክል (ቀይር)"):
+                    if new_total_val == 0:
+                        # ሙሉ በሙሉ ዕዳውን 0 ለማድረግ
                         dube_mezgebiya[edit_name]['original'] = 0
-                        st.success(f"🗑️ የ {edit_name} የዛሬ ዱቤ ተሰርዟል!")
+                        dube_mezgebiya[edit_name]['yedere_dube'] = 0
+                        dube_mezgebiya[edit_name]['paid'] = 0
+                        st.success(f"🗑️ የ {edit_name} ዕዳ ሙሉ በሙሉ ተሰርዟል (0 ሆኗል)!")
                     else:
-                        dube_mezgebiya[edit_name]['original'] = new_val
-                        st.success(f"🔄 የ {edit_name} የዛሬ ዱቤ ወደ {new_val} ዳቦ ተስተካክሏል!")
+                        # አዲሱን መጠን በ 'yedere_dube' ስር ማስተካከል (የድሮውን እና የዛሬውን በአንድ ላይ አጠቃሎ)
+                        dube_mezgebiya[edit_name]['yedere_dube'] = new_total_val
+                        dube_mezgebiya[edit_name]['original'] = 0
+                        dube_mezgebiya[edit_name]['paid'] = 0
+                        st.success(f"🔄 የ {edit_name} ጠቅላላ ዕዳ ወደ {new_total_val} ዳቦ ተስተካክሏል!")
                     
                     save_dube_record(dube_mezgebiya)
                     st.rerun()
                     
             with col_del:
-                if st.button("🗑️ ይህንን ሙሉ በሙሉ ሰርዝ (0 አድርግ)"):
+                if st.button("🗑️ ይህንን ደንበኛ ሙሉ በሙሉ ዕዳውን ሰርዝ (0 አድርግ)"):
                     dube_mezgebiya[edit_name]['original'] = 0
+                    dube_mezgebiya[edit_name]['yedere_dube'] = 0
+                    dube_mezgebiya[edit_name]['paid'] = 0
                     save_dube_record(dube_mezgebiya)
-                    st.success(f"🗑️ የ {edit_name} የዛሬ መዝገብ ሙሉ በሙሉ ተሰርዟል!")
+                    st.success(f"🗑️ የ {edit_name} ዕዳ ሙሉ በሙሉ ተሰርዟል!")
                     st.rerun()
         else:
-            st.write("📅 ዛሬ እስካሁን የተመዘገበ አዲስ የዱቤ ሂሳብ የለም።")
+            st.write("📅 በአሁኑ ሰዓት ዕዳ ያለበት ምንም ደንበኛ የለም።")
     # --- 💰 [2] ዱቤ መቀበያ ---
     elif choice == "💰 [2] ዱቤ መቀበያ":
         st.header("💰 ዱቤ መቀበያ (ቀን ውስጥ)")
