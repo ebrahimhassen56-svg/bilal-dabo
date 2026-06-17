@@ -148,7 +148,7 @@ def check_password():
 
 if check_password():
     st.set_page_config(page_title="ቢላል ዳቦ ቤት", layout="wide")
-    st.title("🥖 ቢላል ዳቦ ቤት - የላቀ የሂሳብ መቆጣጠሪያ (Cloud DB)")
+    st.title("🥖 ቢላል ዳቦ ቤት - የላቀ የሂሳብ መቆጣጠሪያ ")
 
     # ማውጫዎች
     menu = [
@@ -170,7 +170,7 @@ if check_password():
     # --- 🏠 ዋና ገጽ (Dashboard) ---
    # --- 🏠 ዋና ገጽ (Dashboard) ---
     if choice == "🏠 ዋና ገጽ (Dashboard)":
-        st.header("🍞 ቢላል ዳቦ ቤት - የላቀ የሂሳብ መቆጣጠሪያ (Cloud DB)")
+        st.header("🍞 ቢላል ዳቦ ቤት - የላቀ የሂሳብ መቆጣጠሪያ ")
         
         # ከ Supabase ላይ የወጪዎችን ዳታ ሰንጠረዥ በቀጥታ ማውረድ
         try:
