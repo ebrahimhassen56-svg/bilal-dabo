@@ -168,15 +168,26 @@ if check_password():
         st.rerun()
 
     # --- 🏠 ዋና ገጽ (Dashboard) ---
-    # --- 🏠 ዋና ገጽ (Dashboard) ---
+   # --- 🏠 ዋና ገጽ (Dashboard) ---
     if choice == "🏠 ዋና ገጽ (Dashboard)":
         st.header("🍞 ቢላል ዳቦ ቤት - የላቀ የሂሳብ መቆጣጠሪያ (Cloud DB)")
         
+        # ከ Supabase ላይ የወጪዎችን ዳታ ሰንጠረዥ በቀጥታ ማውረድ
+        try:
+            url_exp = f"{SUPABASE_URL}/rest/v1/expenses"
+            res_exp = requests.get(url_exp, headers=HEADERS)
+            live_expenses = res_exp.json() if res_exp.status_code == 200 else []
+        except:
+            live_expenses = []
+            
         # የዛሬ አጠቃላይ ስሌቶች
         total_uncollected_dabo = sum(max(0, v.get('original', 0) + v.get('yedere_dube', 0) - v.get('paid', 0)) for v in dube_mezgebiya.values())
         total_uncollected_birr = total_uncollected_dabo * DABO_WAGA
         
-        total_expenses = sum(e.get('amount', 0) for e in expenses_list)
+        # የወጪ ድምርን በትክክል ማስላት
+        total_expenses = 0
+        if isinstance(live_expenses, list):
+            total_expenses = sum(float(e.get('amount', 0)) for e in live_expenses)
         
         st.subheader("📈 የዛሬው አጠቃላይ የሂሳብ ሁኔታ")
         col1, col2, col3 = st.columns(3)
@@ -190,7 +201,6 @@ if check_password():
         # ለዳሽቦርዱ የሚያስፈልገውን ዳታ ብቻ ማዘጋጀት
         dashboard_data = []
         for name, data in dube_mezgebiya.items():
-            # ጠቅላላ ዕዳ = የዛሬ አዲስ ዱቤ + ያደረ ዱቤ - የተከፈለ
             unpaid_dabo = (data.get('original', 0) + data.get('yedere_dube', 0)) - data.get('paid', 0)
             
             if unpaid_dabo > 0:
@@ -202,14 +212,13 @@ if check_password():
                 })
         
         if dashboard_data:
-            # ልክ በፎቶው ላይ እንዳለው ንጹህ ሰንጠረዥ ማሳያ
             import pandas as pd
             df = pd.DataFrame(dashboard_data)
+            # የሰንጠረዡን መለያ ቁጥር (Index) ከ 1 እንዲጀምር ማድረግ
+            df.index = df.index + 1
             st.table(df)
         else:
             st.success("🎉 በአሁኑ ሰዓት ምንም ያልተሰበሰበ የዳቦ ዕዳ የለም! ሁሉም ደንበኞች ከፍለው ጨርሰዋል።")
-    # --- 📝 [1] አዲስ ዱቤ ---
-    # --- 📝 [1] አዲስ ዱቤ ---
     # --- 📝 [1] አዲስ ዱቤ ---
     elif choice == "📝 [1] አዲስ ዱቤ":
         st.header("📝 አዲስ ዱቤ መመዝገቢያ")
