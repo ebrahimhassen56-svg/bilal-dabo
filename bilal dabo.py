@@ -1,150 +1,119 @@
 import streamlit as st
-import sqlite3
-import json
 import pandas as pd
+import json
 from datetime import datetime
+import requests
 
 DABO_WAGA = 9
 
-# --- 🗄 የዳታቤዝ ስራዎች (DATABASE CONFIG) ---
-DB_FILE = "bilal_dabo.db"
+# --- 🌐 SUPABASE CLOUD DATABASE CONFIG ---
+# ⚠️ እዚህ ጋር የራስህን የ Supabase መረጃዎች በትክክል ተካ!
+SUPABASE_URL = "https://fcerzqxtdrlfrtqjubvz.supabase.co"
+SUPABASE_KEY = "sb_publishable_J3ZTXdoo6e3y7RYd44p6SA_PZmtVYdg"
 
+HEADERS = {
+    "apikey": SUPABASE_KEY,
+    "Authorization": f"Bearer {SUPABASE_KEY}",
+    "Content-Type": "application/json",
+    "Prefer": "return=representation"
+}
+
+# --- 🗄 የዳታቤዝ ረዳት ተግባራት (SUPABASE API) ---
 def init_db():
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    # 1. የዱቤ ደንበኞች ሰንጠረዥ
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS dube_record (
-            customer_name TEXT PRIMARY KEY,
-            original INTEGER DEFAULT 0,
-            paid INTEGER DEFAULT 0,
-            yedere_dube INTEGER DEFAULT 0
-        )
-    ''')
-    # 2. የሰራተኞች ታሪክ ሰንጠረዥ
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS staff_history (
-            record_id TEXT PRIMARY KEY,
-            staff_name TEXT,
-            date TEXT,
-            morning_load INTEGER DEFAULT 0,
-            returned INTEGER DEFAULT 0,
-            cash_sold_dabo INTEGER DEFAULT 0,
-            cash_sold_birr REAL DEFAULT 0,
-            new_dube_dabo INTEGER DEFAULT 0,
-            today_dube_details TEXT,
-            coll_dabo INTEGER DEFAULT 0,
-            coll_birr REAL DEFAULT 0,
-            collected_names TEXT,
-            expected_birr REAL DEFAULT 0,
-            actual_birr REAL DEFAULT 0,
-            diff REAL DEFAULT 0
-        )
-    ''')
-    # 3. የወጪዎች ሰንጠረዥ
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS expenses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            date TEXT,
-            item TEXT,
-            amount REAL
-        )
-    ''')
-    conn.commit()
-    conn.close()
+    # Supabase ላይ ሰንጠረዦች በራስ-ሰር ይፈጠራሉ ወይም SQL Editor ላይ መፍጠር ይቻላል።
+    # የ መጀመሪያ ማስነሻ ሙከራ 
+    pass
 
-# ዳታቤዙን መጀመሪያ ማስጀመር
-init_db()
-
-# --- 🔄 ዳታ የማንበቢያ እና መጻፊያ ተግባራት ---
 def load_dube_record():
-    conn = sqlite3.connect(DB_FILE)
-    df = pd.read_sql_query("SELECT * FROM dube_record", conn)
-    conn.close()
-    res = {}
-    for _, row in df.iterrows():
-        res[row['customer_name']] = {
-            'original': row['original'],
-            'paid': row['paid'],
-            'yedere_dube': row['yedere_dube']
-        }
-    return res
+    url = f"{SUPABASE_URL}/rest/v1/dube_record?select=*"
+    res = requests.get(url, headers=HEADERS)
+    dube_data = {}
+    if res.status_code == 200:
+        for row in res.json():
+            dube_data[row['customer_name']] = {
+                'original': int(row['original']),
+                'paid': int(row['paid']),
+                'yedere_dube': int(row['yedere_dube'])
+            }
+    return dube_data
 
 def save_dube_record(dube_data):
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM dube_record")
+    # ሁሉንም አጥፍቶ በአዲስ መተካት (ለቀላል አሰራር)
+    # ማሳሰቢያ፡ በ Supabase ላይ Upsert መጠቀም ይመረጣል
     for name, v in dube_data.items():
-        cursor.execute("INSERT INTO dube_record VALUES (?, ?, ?, ?)", 
-                       (name, v['original'], v['paid'], v['yedere_dube']))
-    conn.commit()
-    conn.close()
+        payload = {
+            "customer_name": name,
+            "original": int(v['original']),
+            "paid": int(v['paid']),
+            "yedere_dube": int(v['yedere_dube'])
+        }
+        url = f"{SUPABASE_URL}/rest/v1/dube_record"
+        headers_upsert = HEADERS.copy()
+        headers_upsert["Prefer"] = "resolution=merge-duplicates"
+        requests.post(url, headers=headers_upsert, json=payload)
 
 def load_staff_history():
-    conn = sqlite3.connect(DB_FILE)
-    df = pd.read_sql_query("SELECT * FROM staff_history", conn)
-    conn.close()
-    res = {}
-    for _, row in df.iterrows():
-        try: coll_names = json.loads(row['collected_names'])
-        except: coll_names = {}
-        try: today_details = json.loads(row['today_dube_details'])
-        except: today_details = {}
-        
-        res[row['record_id']] = {
-            'staff_name': row['staff_name'], 'date': row['date'],
-            'morning_load': row['morning_load'], 'returned': row['returned'],
-            'cash_sold_dabo': row['cash_sold_dabo'], 'cash_sold_birr': row['cash_sold_birr'],
-            'new_dube_dabo': row['new_dube_dabo'], 'today_dube_details': today_details,
-            'coll_dabo': row['coll_dabo'], 'coll_birr': row['coll_birr'],
-            'collected_names': coll_names, 'expected_birr': row['expected_birr'],
-            'actual_birr': row['actual_birr'], 'diff': row['diff']
-        }
-    return res
+    url = f"{SUPABASE_URL}/rest/v1/staff_history?select=*"
+    res = requests.get(url, headers=HEADERS)
+    history = {}
+    if res.status_code == 200:
+        for row in res.json():
+            try: coll_names = json.loads(row['collected_names'])
+            except: coll_names = {}
+            try: today_details = json.loads(row['today_dube_details'])
+            except: today_details = {}
+            
+            history[row['record_id']] = {
+                'staff_name': row['staff_name'], 'date': row['date'],
+                'morning_load': row['morning_load'], 'returned': row['returned'],
+                'cash_sold_dabo': row['cash_sold_dabo'], 'cash_sold_birr': row['cash_sold_birr'],
+                'new_dube_dabo': row['new_dube_dabo'], 'today_dube_details': today_details,
+                'coll_dabo': row['coll_dabo'], 'coll_birr': row['coll_birr'],
+                'collected_names': coll_names, 'expected_birr': row['expected_birr'],
+                'actual_birr': row['actual_birr'], 'diff': row['diff']
+            }
+    return history
 
 def save_staff_record_single(r_id, r):
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT OR REPLACE INTO staff_history VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (
-        r_id, r['staff_name'], r['date'], r.get('morning_load', 0), r.get('returned', 0),
-        r.get('cash_sold_dabo', 0), r.get('cash_sold_birr', 0), r.get('new_dube_dabo', 0),
-        json.dumps(r.get('today_dube_details', {})), r.get('coll_dabo', 0), r.get('coll_birr', 0),
-        json.dumps(r.get('collected_names', {})), r.get('expected_birr', 0), r.get('actual_birr', 0), r.get('diff', 0)
-    ))
-    conn.commit()
-    conn.close()
+    payload = {
+        "record_id": r_id, "staff_name": r['staff_name'], "date": r['date'],
+        "morning_load": int(r.get('morning_load', 0)), "returned": int(r.get('returned', 0)),
+        "cash_sold_dabo": int(r.get('cash_sold_dabo', 0)), "cash_sold_birr": float(r.get('cash_sold_birr', 0)),
+        "new_dube_dabo": int(r.get('new_dube_dabo', 0)), "today_dube_details": json.dumps(r.get('today_dube_details', {})),
+        "coll_dabo": int(r.get('coll_dabo', 0)), "coll_birr": float(r.get('coll_birr', 0)),
+        "collected_names": json.dumps(r.get('collected_names', {})), "expected_birr": float(r.get('expected_birr', 0)),
+        "actual_birr": float(r.get('actual_birr', 0)), "diff": float(r.get('diff', 0))
+    }
+    url = f"{SUPABASE_URL}/rest/v1/staff_history"
+    headers_upsert = HEADERS.copy()
+    headers_upsert["Prefer"] = "resolution=merge-duplicates"
+    requests.post(url, headers=headers_upsert, json=payload)
 
 def delete_staff_record(r_id):
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM staff_history WHERE record_id = ?", (r_id,))
-    conn.commit()
-    conn.close()
+    url = f"{SUPABASE_URL}/rest/v1/staff_history?record_id=eq.{r_id}"
+    requests.delete(url, headers=HEADERS)
 
 def load_expenses():
-    conn = sqlite3.connect(DB_FILE)
-    df = pd.read_sql_query("SELECT id, date, item, amount FROM expenses", conn)
-    conn.close()
-    return {"list": df.to_dict(orient="records")}
+    url = f"{SUPABASE_URL}/rest/v1/expenses?select=*"
+    res = requests.get(url, headers=HEADERS)
+    if res.status_code == 200:
+        return {"list": res.json()}
+    return {"list": []}
 
 def add_expense(item, amount):
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO expenses (date, item, amount) VALUES (?, ?, ?)",
-                   (datetime.now().strftime('%Y-%m-%d %H:%M'), item, float(amount)))
-    conn.commit()
-    conn.close()
+    payload = {
+        "date": datetime.now().strftime('%Y-%m-%d %H:%M'),
+        "item": item,
+        "amount": float(amount)
+    }
+    url = f"{SUPABASE_URL}/rest/v1/expenses"
+    requests.post(url, headers=HEADERS, json=payload)
 
 def delete_expense(expense_id):
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM expenses WHERE id = ?", (expense_id,))
-    conn.commit()
-    conn.close()
+    url = f"{SUPABASE_URL}/rest/v1/expenses?id=eq.{expense_id}"
+    requests.delete(url, headers=HEADERS)
 
-# ዳታዎችን መጫን
+# ዳታዎችን ከCloud መጫን
 dube_mezgebiya = load_dube_record()
 staff_history = load_staff_history()
 expenses_data = load_expenses()
@@ -176,7 +145,7 @@ def check_password():
 
 if check_password():
     st.set_page_config(page_title="ቢላል ዳቦ ቤት", layout="wide")
-    st.title("🥖 ቢላል ዳቦ ቤት - የላቀ የሂሳብ መቆጣጠሪያ")
+    st.title("🥖 ቢላል ዳቦ ቤት - የላቀ የሂሳብ መቆጣጠሪያ (Cloud DB)")
 
     # ማውጫዎች
     menu = [
@@ -199,7 +168,7 @@ if check_password():
     elif choice == "🏠 ዋና ገጽ (Dashboard)":
         st.header("📈 የዛሬው አጠቃላይ የሂሳብ ሁኔታ")
         total_dube_dabo = sum([(v.get('yedere_dube', 0) + v.get('original', 0) - v.get('paid', 0)) for v in dube_mezgebiya.values()])
-        total_expenses = sum([e['amount'] for e in expenses_data.get('list', [])])
+        total_expenses = sum([float(e['amount']) for e in expenses_data.get('list', [])])
         
         col1, col2, col3 = st.columns(3)
         col1.metric("ያልተሰበሰበ ጠቅላላ ዱቤ", f"{total_dube_dabo} ዳቦ", f"{total_dube_dabo * DABO_WAGA} ብር")
@@ -209,7 +178,6 @@ if check_password():
         st.write("---")
         st.subheader("የደንበኞች ወቅታዊ የሂሳብ ዝርዝር (ዕዳ ያለባቸው ብቻ)")
         
-        # 🔍 እዚህ ጋር ሂሳባቸው ከ 0 በላይ የሆኑትን ብቻ ነጥሎ የማውጫ ፊልተር ተሰርቷል
         active_dube = {}
         for name, v in dube_mezgebiya.items():
             qeri_total = v.get('yedere_dube', 0) + v.get('original', 0) - v.get('paid', 0)
@@ -377,7 +345,7 @@ if check_password():
                 })
             st.dataframe(pd.DataFrame(rep_rows), use_container_width=True)
             
-            st.subheader(f"📅 የ {sel_staff} የዕለት ዝርዝር መረጃ (ያልተፈለገውን ቀን መርጠው ማጥፊያ)")
+            st.subheader(f"📅 የ {sel_staff} የዕለት ዝርዝር መረጃ")
             for r_id, rec in staff_recs:
                 with st.expander(f"📅 የዕለት ሪፖርት ቀን፦ {rec.get('date','')}"):
                     col_info, col_del = st.columns([4, 1.5])
@@ -517,10 +485,10 @@ if check_password():
                 for exp in expenses_data["list"]:
                     c_text, c_btn = st.columns([3, 1])
                     with c_text:
-                        st.write(f"📅 {exp['date']} | 🏷️ {exp['item']} | 💰 **{exp['amount']} ብር**")
+                        st.write(f"📅 {exp.get('date','')} | 🏷️ {exp.get('item','')} | 💰 **{exp.get('amount',0)} ብር**")
                     with c_btn:
-                        if st.button("🗑️ አጥፋ", key=f"del_exp_{exp['id']}"):
-                            delete_expense(exp['id'])
+                        if st.button("🗑️ አጥፋ", key=f"del_exp_{exp.get('id')}"):
+                            delete_expense(exp.get('id'))
                             st.warning(f"⚠️ የወጪ መዝገብ ተሰርዟል!")
                             st.rerun()
                     st.write("---")
