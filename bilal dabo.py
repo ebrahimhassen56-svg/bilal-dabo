@@ -170,7 +170,7 @@ if check_password():
     # --- 🏠 ዋና ገጽ (Dashboard) ---
    # --- 🏠 ዋና ገጽ (Dashboard) ---
     if choice == "🏠 ዋና ገጽ (Dashboard)":
-        st.header("🍞 ቢላል ዳቦ ቤት - የላቀ የሂሳብ መቆጣጠሪያ ")
+        st.header("")
         
         # ከ Supabase ላይ የወጪዎችን ዳታ ሰንጠረዥ በቀጥታ ማውረድ
         try:
