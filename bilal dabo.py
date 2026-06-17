@@ -106,9 +106,12 @@ def add_expense(item, amount):
         "item": item,
         "amount": float(amount)
     }
+    # Supabase ራሱ ID እንዲሰጠው ይሄንን Header እንጨምራለን
+    headers_expense = HEADERS.copy()
+    headers_expense["Prefer"] = "return=representation"
+    
     url = f"{SUPABASE_URL}/rest/v1/expenses"
-    requests.post(url, headers=HEADERS, json=payload)
-
+    requests.post(url, headers=headers_expense, json=payload)
 def delete_expense(expense_id):
     url = f"{SUPABASE_URL}/rest/v1/expenses?id=eq.{expense_id}"
     requests.delete(url, headers=HEADERS)
