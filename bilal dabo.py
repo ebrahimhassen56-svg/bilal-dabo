@@ -168,30 +168,46 @@ if check_password():
         st.rerun()
 
     # --- 🏠 ዋና ገጽ (Dashboard) ---
-    elif choice == "🏠 ዋና ገጽ (Dashboard)":
-        st.header("📈 የዛሬው አጠቃላይ የሂሳብ ሁኔታ")
-        total_dube_dabo = sum([(v.get('yedere_dube', 0) + v.get('original', 0) - v.get('paid', 0)) for v in dube_mezgebiya.values()])
-        total_expenses = sum([float(e['amount']) for e in expenses_data.get('list', [])])
+    # --- 🏠 ዋና ገጽ (Dashboard) ---
+    if choice == "🏠 ዋና ገጽ (Dashboard)":
+        st.header("🍞 ቢላል ዳቦ ቤት - የላቀ የሂሳብ መቆጣጠሪያ (Cloud DB)")
         
+        # የዛሬ አጠቃላይ ስሌቶች
+        total_uncollected_dabo = sum(max(0, v.get('original', 0) + v.get('yedere_dube', 0) - v.get('paid', 0)) for v in dube_mezgebiya.values())
+        total_uncollected_birr = total_uncollected_dabo * DABO_WAGA
+        
+        total_expenses = sum(e.get('amount', 0) for e in expenses_list)
+        
+        st.subheader("📈 የዛሬው አጠቃላይ የሂሳብ ሁኔታ")
         col1, col2, col3 = st.columns(3)
-        col1.metric("ያልተሰበሰበ ጠቅላላ ዱቤ", f"{total_dube_dabo} ዳቦ", f"{total_dube_dabo * DABO_WAGA} ብር")
+        col1.metric("ያልተሰበሰበ ጠቅላላ ዳቦ", f"{total_uncollected_dabo} ዳቦ")
         col2.metric("የዳቦ ነጠላ ዋጋ", f"{DABO_WAGA} ብር")
         col3.metric("የወጣ ጠቅላላ ወጪ", f"{total_expenses} ብር")
         
         st.write("---")
-        st.subheader("የደንበኞች ወቅታዊ የሂሳብ ዝርዝር (ዕዳ ያለባቸው ብቻ)")
+        st.subheader("🔴 ዱቤ ያልከፈሉ ደንበኞች ስም ዝርዝር")
         
-        active_dube = {}
-        for name, v in dube_mezgebiya.items():
-            qeri_total = v.get('yedere_dube', 0) + v.get('original', 0) - v.get('paid', 0)
-            if qeri_total > 0:
-                active_dube[name] = v
-                
-        if active_dube:
-            st.dataframe(pd.DataFrame.from_dict(active_dube, orient="index"), use_container_width=True)
+        # ለዳሽቦርዱ የሚያስፈልገውን ዳታ ብቻ ማዘጋጀት
+        dashboard_data = []
+        for name, data in dube_mezgebiya.items():
+            # ጠቅላላ ዕዳ = የዛሬ አዲስ ዱቤ + ያደረ ዱቤ - የተከፈለ
+            unpaid_dabo = (data.get('original', 0) + data.get('yedere_dube', 0)) - data.get('paid', 0)
+            
+            if unpaid_dabo > 0:
+                unpaid_birr = unpaid_dabo * DABO_WAGA
+                dashboard_data.append({
+                    "የደንበኛ ስም": name,
+                    "ያልተከፈለ ዕዳ (ዳቦ)": unpaid_dabo,
+                    "ዕዳ በብር": unpaid_birr
+                })
+        
+        if dashboard_data:
+            # ልክ በፎቶው ላይ እንዳለው ንጹህ ሰንጠረዥ ማሳያ
+            import pandas as pd
+            df = pd.DataFrame(dashboard_data)
+            st.table(df)
         else:
-            st.success("🎉 በአሁኑ ሰዓት ምንም ያልተሰበሰበ የዱቤ ዕዳ የለም! ሁሉም ደንበኞች ከፍለው ጨርሰዋል።")
-
+            st.success("🎉 በአሁኑ ሰዓት ምንም ያልተሰበሰበ የዳቦ ዕዳ የለም! ሁሉም ደንበኞች ከፍለው ጨርሰዋል።")
     # --- 📝 [1] አዲስ ዱቤ ---
     # --- 📝 [1] አዲስ ዱቤ ---
     elif choice == "📝 [1] አዲስ ዱቤ":
