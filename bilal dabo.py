@@ -193,12 +193,16 @@ if check_password():
             st.success("🎉 በአሁኑ ሰዓት ምንም ያልተሰበሰበ የዱቤ ዕዳ የለም! ሁሉም ደንበኞች ከፍለው ጨርሰዋል።")
 
     # --- 📝 [1] አዲስ ዱቤ ---
+    # --- 📝 [1] አዲስ ዱቤ ---
     elif choice == "📝 [1] አዲስ ዱቤ":
         st.header("📝 አዲስ ዱቤ መመዝገቢያ")
+        
+        # 1. አዲስ መመዝገቢያ ፎርም
         with st.form("new_dube_form", clear_on_submit=True):
             name = st.text_input("የደንበኛ ስም").strip()
             count = st.number_input("ለደንበኛው የተሰጠ የዳቦ ብዛት", min_value=1, step=1)
             submit = st.form_submit_button("✅ መዝግብ")
+            
             if submit and name:
                 if name in dube_mezgebiya: 
                     dube_mezgebiya[name]['original'] += count
@@ -206,7 +210,48 @@ if check_password():
                     dube_mezgebiya[name] = {'original': count, 'paid': 0, 'yedere_dube': 0}
                 save_dube_record(dube_mezgebiya)
                 st.success(f"✅ ለ {name} {count} ዳቦ ዱቤ ተመዝግቧል!")
+                st.rerun()
 
+        st.write("---")
+        st.subheader("🔄 አሁን የተመዘገቡ የዛሬ አዲስ ዱቤዎች ማስተካከያ (ገና ስራ ያልተዘጋ)")
+        
+        # 2. ዛሬ የተመዘገቡትን ብቻ ለይቶ ማውጫ (original > 0 የሆኑትን)
+        today_active_custs = {k: v for k, v in dube_mezgebiya.items() if v.get('original', 0) > 0}
+        
+        if today_active_custs:
+            st.info("💡 ስራ ከመዘጋቱ በፊት የተሳሳቱትን ሂሳብ እዚህ ጋር መቀየር ወይም ሙሉ በሙሉ ማጥፋት ይችላሉ።")
+            
+            # ደንበኛ መምረጫ
+            edit_name = st.selectbox("ማስተካከል የሚፈልጉትን ደንበኛ ስም ይምረጡ፦", list(today_active_custs.keys()))
+            current_val = dube_mezgebiya[edit_name]['original']
+            
+            st.warning(f"👉 '{edit_name}' አሁን የተመዘገበለት አዲስ ዱቤ መጠን፦ {current_val} ዳቦ ነው")
+            
+            # አዲስ ማስተካከያ ቁጥር ማስገቢያ
+            new_val = st.number_input("ትክክለኛውን የተስተካከለ የዳቦ ብዛት ያስገቡ፦", min_value=0, step=1, value=int(current_val))
+            
+            col_save, col_del = st.columns(2)
+            
+            with col_save:
+                if st.button("💾 ቁጥሩን አስተካክል (ቀይር)"):
+                    if new_val == 0:
+                        dube_mezgebiya[edit_name]['original'] = 0
+                        st.success(f"🗑️ የ {edit_name} የዛሬ ዱቤ ተሰርዟል!")
+                    else:
+                        dube_mezgebiya[edit_name]['original'] = new_val
+                        st.success(f"🔄 የ {edit_name} የዛሬ ዱቤ ወደ {new_val} ዳቦ ተስተካክሏል!")
+                    
+                    save_dube_record(dube_mezgebiya)
+                    st.rerun()
+                    
+            with col_del:
+                if st.button("🗑️ ይህንን ሙሉ በሙሉ ሰርዝ (0 አድርግ)"):
+                    dube_mezgebiya[edit_name]['original'] = 0
+                    save_dube_record(dube_mezgebiya)
+                    st.success(f"🗑️ የ {edit_name} የዛሬ መዝገብ ሙሉ በሙሉ ተሰርዟል!")
+                    st.rerun()
+        else:
+            st.write("📅 ዛሬ እስካሁን የተመዘገበ አዲስ የዱቤ ሂሳብ የለም።")
     # --- 💰 [2] ዱቤ መቀበያ ---
     elif choice == "💰 [2] ዱቤ መቀበያ":
         st.header("💰 ዱቤ መቀበያ (ቀን ውስጥ)")
