@@ -280,6 +280,7 @@ if check_password():
                 st.rerun()
 
     # --- 📊 [3] ስራ መዝጊያ ---
+    # --- 📊 [3] ስራ መዝጊያ ---
     elif choice == "📊 [3] ስራ መዝጊያ":
         st.header("📊 የዕለት ስራ መዝጊያ")
         s_name = st.text_input("የሰራተኛው ስም").strip().capitalize()
@@ -319,6 +320,11 @@ if check_password():
                 if ans > 0: collected_names[name] = ans
 
             st.write("---")
+            st.subheader("💸 የዕለት ወጪ መመዝገቢያ (ካለ)")
+            exp_item = st.text_input("የወጪ ምክንያት (ምሳሌ፡ የላስቲክ፣ መብራት...)").strip()
+            exp_amount = st.number_input("የወጪ ብር መጠን", min_value=0.0, step=1.0)
+
+            st.write("---")
             actual_birr = st.number_input("💰 ሰራተኛው ያስረከበው ብር (Actual Birr)", min_value=0.0)
             
             if st.button("💾 የዕለት ሒሳብ ዝጋ"):
@@ -340,7 +346,13 @@ if check_password():
                 total_out = wosede - melesse
                 cash_sold_dabo = total_out - new_dube_total
                 cash_sold_birr = cash_sold_dabo * DABO_WAGA
-                expected = cash_sold_birr + coll_birr_sum
+                
+                # ወጪ ካለ ሂሳብ ላይ ይቀንሳል
+                if exp_item and exp_amount > 0:
+                    add_expense(f"{s_name}: {exp_item}", exp_amount)
+                    expected = cash_sold_birr + coll_birr_sum - exp_amount
+                else:
+                    expected = cash_sold_birr + coll_birr_sum
                 
                 staff_history[rec_id].update({
                     "morning_load": wosede, "returned": melesse, "cash_sold_dabo": cash_sold_dabo, 
@@ -356,9 +368,8 @@ if check_password():
                 save_dube_record(dube_mezgebiya)
                 save_staff_record_single(rec_id, staff_history[rec_id])
                 st.session_state.closing_new_dube = [{"name": "", "amt": 0}]
-                st.success("✅ ሒሳቡ በተሳካ ሁኔታ ተዘግቷል!")
+                st.success("✅ ሒሳቡ እና ወጪው በተሳካ ሁኔታ ተመዝግቦ ተዘግቷል!")
                 st.rerun()
-
     # --- 📜 [4] ሪፖርት ---
     elif choice == "📜 [4] ሪፖርት":
         st.header("🔴 ዱቤ ያልከፈሉ ደንበኞች ስም ዝርዝር")
