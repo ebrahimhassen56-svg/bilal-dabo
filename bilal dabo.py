@@ -3,7 +3,6 @@ import pandas as pd
 import json
 from datetime import datetime
 import requests
-import time
 DABO_WAGA = 9
 
 # --- 🌐 SUPABASE CLOUD DATABASE CONFIG ---
@@ -323,107 +322,109 @@ if check_password():
     # --- 📊 [3] ስራ መዝጊያ ---
    # --- 👨‍🍳 [2] የስራ መመዝገቢያ (ለሰራተኛ) ---
     elif choice == "👨‍🍳 [2] የስራ መመዝገቢያ (ለሰራተኛ)":
-        try:
-            st.header("👨‍🍳 የዕለት ተዕለት ስራ መመዝገቢያ ማዕከል")
+        st.header("👨‍🍳 የዕለት ተዕለት ስራ መመዝገቢያ ማዕከል")
+        
+        staff_name = st.text_input("የሰራተኛው ስም").strip().capitalize()
+        
+        # 1. የዳቦ ስርጭት መረጃ ማስገቢያ
+        col1, col2 = st.columns(2)
+        with col1:
+            morning_load = st.number_input("የተረከበው የዳቦ ብዛት (Morning Load)", min_value=0, step=1)
+        with col2:
+            returned = st.number_input("የመለሰው የዳቦ ብዛት (Returned)", min_value=0, step=1)
             
-            staff_name = st.text_input("የሰራተኛው ስም").strip().capitalize()
-            
-            # 1. የዳቦ ስርጭት መረጃ ማስገቢያ
-            col1, col2 = st.columns(2)
-            with col1:
-                morning_load = st.number_input("የተረከበው የዳቦ ብዛት (Morning Load)", min_value=0, step=1)
-            with col2:
-                returned = st.number_input("የመለሰው የዳቦ ብዛት (Returned)", min_value=0, step=1)
+        # 2. የዛሬ አዲስ ዱቤዎችን በራስ-ሰር ማስላት
+        today_dube_dict = {k: v['original'] for k, v in dube_mezgebiya.items() if v.get('original', 0) > 0}
+        total_today_dube_dabo = sum(today_dube_dict.values())
+        
+        st.info(f"📊 ዛሬ በሲስተሙ የተመዘገበ ጠቅላላ አዲስ ዱቤ፦ {total_today_dube_dabo} ዳቦ")
+        
+        # 3. የዱቤ አሰባሰብ (ከዚህ በፊት የቆየ ዕዳ የከፈሉ ካሉ)
+        coll_birr = st.number_input("ዛሬ ከዱቤ የተሰበሰበ ጠቅላላ ብር (ካለ)", min_value=0.0, step=10.0)
+        
+        # --- 💸 የሰራተኛ ወጪዎች (ዛሬ ከካሽ ላይ የወጣ) ---
+        st.write("---")
+        st.subheader("💸 የሰራተኛ ወጪዎች (ዛሬ ከካሽ ላይ የወጣ)")
+        has_expense = st.checkbox("💡 ሰራተኛው ዛሬ ከካሽ ላይ ያወጣው ወጪ ካለ እዚህ ይጫኑ")
+        
+        staff_expense_item = ""
+        staff_expense_amount = 0.0
+        
+        if has_expense:
+            col_exp1, col_exp2 = st.columns(2)
+            with col_exp1:
+                staff_expense_item = st.text_input("የወጪው ምክንያት (ምሳሌ፦ ለሽንኩርት፣ ለትራንስፖርት...)").strip()
+            with col_exp2:
+                staff_expense_amount = st.number_input("የወጣው የብር መጠን", min_value=0.0, step=5.0)
+        st.write("---")
+        
+        # 4. ሂሳብ ማስረከቢያ
+        actual_birr = st.number_input("ሰራተኛው በተግባር ያስረከበው የተጣራ ብር (Actual Cash)", min_value=0.0, step=10.0)
+        
+        if st.button("💾 የዛሬውን ስራ መዝግብና ዝጋ"):
+            if not staff_name:
+                st.error("❌ እባክዎ መጀመሪያ የሰራተኛውን ስም ያስገቡ!")
+            elif morning_load < returned:
+                st.error("❌ ስህተት፦ የተመለሰው ዳቦ ከተረከበው ሊበልጥ አይችልም!")
+            else:
+                total_sold_dabo = morning_load - returned
+                cash_sold_dabo = total_sold_dabo - total_today_dube_dabo
                 
-            # 2. የዛሬ አዲስ ዱቤዎችን በራስ-ሰር ማስላት
-            today_dube_dict = {k: v['original'] for k, v in dube_mezgebiya.items() if v.get('original', 0) > 0}
-            total_today_dube_dabo = sum(today_dube_dict.values())
-            
-            st.info(f"📊 ዛሬ በሲስተሙ የተመዘገበ ጠቅላላ አዲስ ዱቤ፦ {total_today_dube_dabo} ዳቦ")
-            
-            # 3. የዱቤ አሰባሰብ (ከዚህ በፊት የቆየ ዕዳ የከፈሉ ካሉ)
-            coll_birr = st.number_input("ዛሬ ከዱቤ የተሰበሰበ ጠቅላላ ብር (ካለ)", min_value=0.0, step=10.0)
-            
-            # --- 💸 የሰራተኛ ወጪዎች ---
-            st.write("---")
-            st.subheader("💸 የሰራተኛ ወጪዎች (ዛሬ ከካሽ ላይ የወጣ)")
-            has_expense = st.checkbox("💡 ሰራተኛው ዛሬ ከካሽ ላይ ያወጣው ወጪ ካለ እዚህ ይጫኑ")
-            
-            staff_expense_item = ""
-            staff_expense_amount = 0.0
-            
-            if has_expense:
-                col_exp1, col_exp2 = st.columns(2)
-                with col_exp1:
-                    staff_expense_item = st.text_input("የወጪው ምክንያት (ምሳሌ፦ ለሽንኩርት...)").strip()
-                with col_exp2:
-                    staff_expense_amount = st.number_input("የወጣው የብር መጠን", min_value=0.0, step=5.0)
-            st.write("---")
-            
-            # 4. ሂሳብ ማስረከቢያ
-            actual_birr = st.number_input("ሰራተኛው በተግባር ያስረከበው የተጣራ ብር (Actual Cash)", min_value=0.0, step=10.0)
-            
-            if st.button("💾 የዛሬውን ስራ መዝግብና ዝጋ"):
-                if not staff_name:
-                    st.error("❌ እባክዎ መጀመሪያ የሰራተኛውን ስም ያስገቡ!")
-                elif morning_load < returned:
-                    st.error("❌ ስህተት፦ የተመለሰው ዳቦ ከተረከበው ሊበልጥ አይችልም!")
+                if cash_sold_dabo < 0:
+                    st.error("❌ ስህተት፦ የተሸጠው ዳቦ ከዱቤው ያነሰ ነው። እባክዎ የአዲስ ዱቤ መዝገብን ያረጋግጡ!")
                 else:
-                    total_sold_dabo = morning_load - returned
-                    cash_sold_dabo = total_sold_dabo - total_today_dube_dabo
+                    # የካሽ ሽያጭ ስሌት
+                    cash_sold_birr = cash_sold_dabo * DABO_WAGA
                     
-                    if cash_sold_dabo < 0:
-                        st.error("❌ ስህተት፦ የተሸጠው ዳቦ ከዱቤው ያነሰ ነው። እባክዎ የአዲስ ዱቤ መዝገብን ያረጋግጡ!")
-                    else:
-                        cash_sold_birr = cash_sold_dabo * DABO_WAGA
-                        expected_birr = (cash_sold_birr + coll_birr) - staff_expense_amount
-                        diff = actual_birr - expected_birr
-                        
-                        record_id = str(int(time.time()))
-                        payload = {
-                            "id": record_id,
+                    # ከሰራተኛው የሚጠበቀው ብር (ወጪው ተቀንሶለት ኔጌቲቭ እንዳይመጣ ያደርጋል)
+                    expected_birr = (cash_sold_birr + coll_birr) - staff_expense_amount
+                    diff = actual_birr - expected_birr
+                    
+                    # ልዩ ID በሰዓት መስሪያ (የ datetime ጥቅል በመጠቀም)
+                    record_id = datetime.now().strftime('%Y%m%d%H%M%S')
+                    
+                    payload = {
+                        "id": record_id,
+                        "date": datetime.now().strftime('%Y-%m-%d %H:%M'),
+                        "staff_name": staff_name,
+                        "morning_load": int(morning_load),
+                        "returned": int(returned),
+                        "today_dube_details": today_dube_dict,
+                        "new_dube_dabo": int(total_today_dube_dabo),
+                        "coll_birr": float(coll_birr),
+                        "actual_birr": float(actual_birr),
+                        "expected_birr": float(expected_birr),
+                        "diff": float(diff),
+                        "staff_expense_reason": staff_expense_item,
+                        "staff_expense_amount": float(staff_expense_amount)
+                    }
+                    
+                    # ሀ) ወደ staff_history መላክ
+                    url_staff = f"{SUPABASE_URL}/rest/v1/staff_history"
+                    requests.post(url_staff, headers=HEADERS, json=payload)
+                    
+                    # ለ) ወጪ ካለ ወደ expenses ሰንጠረዥ መላክ
+                    if staff_expense_amount > 0 and staff_expense_item:
+                        payload_exp = {
                             "date": datetime.now().strftime('%Y-%m-%d %H:%M'),
-                            "staff_name": staff_name,
-                            "morning_load": int(morning_load),
-                            "returned": int(returned),
-                            "today_dube_details": today_dube_dict,
-                            "new_dube_dabo": int(total_today_dube_dabo),
-                            "coll_birr": float(coll_birr),
-                            "actual_birr": float(actual_birr),
-                            "expected_birr": float(expected_birr),
-                            "diff": float(diff),
-                            "staff_expense_reason": staff_expense_item,
-                            "staff_expense_amount": float(staff_expense_amount)
+                            "item": f"{staff_name} - {staff_expense_item}",
+                            "amount": float(staff_expense_amount)
                         }
-                        
-                        url_staff = f"{SUPABASE_URL}/rest/v1/staff_history"
-                        requests.post(url_staff, headers=HEADERS, json=payload)
-                        
-                        if staff_expense_amount > 0 and staff_expense_item:
-                            payload_exp = {
-                                "date": datetime.now().strftime('%Y-%m-%d %H:%M'),
-                                "item": f"{staff_name} - {staff_expense_item}",
-                                "amount": float(staff_expense_amount)
-                            }
-                            headers_exp = HEADERS.copy()
-                            headers_exp["Prefer"] = "return=representation"
-                            url_exp = f"{SUPABASE_URL}/rest/v1/expenses"
-                            requests.post(url_exp, headers=headers_exp, json=payload_exp)
-                        
-                        for k, v in dube_mezgebiya.items():
-                            if v.get('original', 0) > 0:
-                                v['yedere_dube'] = v.get('yedere_dube', 0) + v['original']
-                                v['original'] = 0
-                                v['paid'] = 0
-                        save_dube_record(dube_mezgebiya)
-                        
-                        st.success(f"🎉 የ {staff_name} የዛሬ ሂሳብ በተሳካ ሁኔታ ተዘግቷል!")
-                        st.rerun()
-                        
-        except Exception as e:
-            # ስህተት ካለ እዚህ ጋር በግልጽ ያሳየናል
-            st.error(f"⚠️ በኮዱ ውስጥ የተፈጠረ ስህተት አለ፦ {str(e)}")
-
+                        headers_exp = HEADERS.copy()
+                        headers_exp["Prefer"] = "return=representation"
+                        url_exp = f"{SUPABASE_URL}/rest/v1/expenses"
+                        requests.post(url_exp, headers=headers_exp, json=payload_exp)
+                    
+                    # ሐ) ዱቤ ማዛወር
+                    for k, v in dube_mezgebiya.items():
+                        if v.get('original', 0) > 0:
+                            v['yedere_dube'] = v.get('yedere_dube', 0) + v['original']
+                            v['original'] = 0
+                            v['paid'] = 0
+                    save_dube_record(dube_mezgebiya)
+                    
+                    st.success(f"🎉 የ {staff_name} የዛሬ ሂሳብ በተሳካ ሁኔታ ተዘግቷል!")
+                    st.rerun()
     # --- 📜 [4] ሪፖርት ---
     elif choice == "📜 [4] ሪፖርት":
         st.header("🔴 ዱቤ ያልከፈሉ ደንበኞች ስም ዝርዝር")
