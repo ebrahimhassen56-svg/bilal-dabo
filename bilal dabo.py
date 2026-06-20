@@ -165,7 +165,7 @@ if check_password():
     if choice == "🚪 ውጣ (Logout)":
         st.session_state.authenticated = False
         st.rerun()
-[6/20/2026 10:00 AM] Wow: # --- 🏠 ዋና ገጽ (Dashboard) ---
+# --- 🏠 ዋና ገጽ (Dashboard) ---
    # --- 🏠 ዋና ገጽ (Dashboard) ---
     if choice == "🏠 ዋና ገጽ (Dashboard)":
         st.header("")
