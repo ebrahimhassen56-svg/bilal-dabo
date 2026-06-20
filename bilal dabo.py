@@ -371,6 +371,7 @@ if check_password():
                 st.success("✅ ሒሳቡ እና ወጪው በተሳካ ሁኔታ ተመዝግቦ ተዘግቷል!")
                 st.rerun()
     # --- 📜 [4] ሪፖርት ---
+    # --- 📜 [4] ሪፖርት ---
     elif choice == "📜 [4] ሪፖርት":
         st.header("🔴 ዱቤ ያልከፈሉ ደንበኞች ስም ዝርዝር")
         rows = []
@@ -378,8 +379,12 @@ if check_password():
             qeri_total = v.get('yedere_dube', 0) + v.get('original', 0) - v.get('paid', 0)
             if qeri_total > 0:
                 rows.append({"የደንበኛ ስም": k, "ያልተከፈለ ዕዳ (ዳቦ)": qeri_total, "ዕዳ በብር": qeri_total * DABO_WAGA})
-        if rows: st.dataframe(pd.DataFrame(rows), use_container_width=True)
-        else: st.success("ምንም የዱቤ ዕዳ የለም። 🎉")
+        
+        if rows:
+            df_dube = pd.DataFrame(rows)
+            st.dataframe(df_dube, use_container_width=True)
+        else:
+            st.success("ምንም የዱቤ ዕዳ የለም። 🎉")
         
         st.write("---")
         st.header("📜 የሰራተኞች የዕለት ሪፖርት ዝርዝር")
@@ -391,25 +396,47 @@ if check_password():
             
             rep_rows = []
             for r_id, r in staff_recs:
+                # ከ Expected Birr ቀመር ላይ ተነስተን የወጣውን ወጪ እዚህ ጋር እናሰላዋለን
+                cash_birr = r.get('cash_sold_birr', 0)
+                coll_birr = r.get('coll_birr', 0)
+                expected_birr = r.get('expected_birr', 0)
+                # ወጪ = (የካሽ ሽያጭ + የተሰበሰበ ዱቤ) - ሲስተሙ የጠበቀው ጠቅላላ ብር
+                calculated_expense = (cash_birr + coll_birr) - expected_birr
+                if calculated_expense < 0: calculated_expense = 0
+                
                 rep_rows.append({
-                    "ቀንና ሰዓት": r.get('date',''), "ወጣ": r.get('morning_load',0), "ገባ": r.get('returned',0),
-                    "ካሽ(ዳ)": r.get('cash_sold_dabo',0), "ካሽ(ብር)": r.get('cash_sold_birr',0),
-                    "ዱቤ(ብር)": r.get('coll_birr',0), "አዲስ ዱ": r.get('new_dube_dabo',0),
-                    "የተጠበቀ": r.get('expected_birr',0), "የመጣ": r.get('actual_birr',0), "+/-": r.get('diff',0)
+                    "ቀንና ሰዓት": r.get('date',''), 
+                    "ወጣ": r.get('morning_load',0), 
+                    "ገባ": r.get('returned',0),
+                    "ካሽ(ዳ)": r.get('cash_sold_dabo',0), 
+                    "ካሽ(ብር)": cash_birr,
+                    "ዱቤ(ብር)": coll_birr, 
+                    "አዲስ ዱ": r.get('new_dube_dabo',0),
+                    "የዕለት ወጪ": calculated_expense,  # 👈 አዲሱ የወጪ አምድ እዚህ ተጨምሯል
+                    "የተጠበቀ": expected_birr, 
+                    "የመጣ": r.get('actual_birr',0), 
+                    "+/-": r.get('diff',0)
                 })
-            st.dataframe(pd.DataFrame(rep_rows), use_container_width=True)
+            
+            df_rep = pd.DataFrame(rep_rows)
+            st.dataframe(df_rep, use_container_width=True)
             
             st.subheader("📅 የዕለት ዝርዝር መረጃ")
             for r_id, rec in staff_recs:
-                with st.expander(f"📅 ሪፖርት ቀን፦ {rec.get('date','')}"):
+                expander_title = f"📅 ሪፖርት ቀን፦ {rec.get('date','')}"
+                with st.expander(expander_title):
                     col_info, col_del = st.columns([4, 1.5])
                     with col_info:
                         if rec.get("collected_names"):
                             st.write("💵 የድሮ ዱቤ የተቀበለው፦")
-                            for c_n, c_a in rec["collected_names"].items(): st.write(f"👉 {c_n}: {c_a} ዳቦ")
+                            for c_n, c_a in rec["collected_names"].items():
+                                msg = f"👉 {c_n}: {c_a} ዳቦ"
+                                st.write(msg)
                         if rec.get("today_dube_details"):
                             st.write("📦 አዲስ ዱቤ የወሰዱ፦")
-                            for n_n, n_a in rec["today_dube_details"].items(): st.write(f"🔸 {n_n}: {n_a} ዳቦ")
+                            for n_n, n_a in rec["today_dube_details"].items():
+                                msg2 = f"🔸 {n_n}: {n_a} ዳቦ"
+                                st.write(msg2)
                     with col_del:
                         if st.button("🗑 ይህንን ሪፖርት አጥፋ", key=f"del_staff_{r_id}"):
                             delete_staff_record(r_id)
