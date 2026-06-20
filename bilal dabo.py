@@ -309,7 +309,7 @@ if check_password():
                 staff_history[rec_id]["collected_names"][sel_name] = staff_history[rec_id]["collected_names"].get(sel_name, 0) + amt
                 staff_history[rec_id]["coll_dabo"] = sum(staff_history[rec_id]["collected_names"].values())
                 staff_history[rec_id]["coll_birr"] = staff_history[rec_id]["coll_dabo"] * DABO_WAGA
-[6/20/2026 10:00 AM] Wow: save_dube_record(dube_mezgebiya)
+                save_dube_record(dube_mezgebiya)
                 save_staff_record_single(rec_id, staff_history[rec_id])
                 st.success(f"✅ ከ {sel_name} {amt} ዳቦ ተቀብለው በ {s_name} መዝገብ ላይ ሰፍሯል!")
 
