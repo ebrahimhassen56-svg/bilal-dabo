@@ -440,7 +440,7 @@ if check_password():
                             st.warning(f"⚠️ የ ቀን {rec.get('date','')} የተበላሸው ሪፖርት ብቻ ተሰርዟል!")
                             st.rerun()
         else: st.info("ምንም የሰራተኛ የዕለት ሪፖርት ታሪክ የለም።")
-[6/20/2026 10:00 AM] Wow: # --- 🛠 [5] ማስተካከያ (EDIT) ---
+            # --- 🛠 [5] ማስተካከያ (EDIT) ---
     elif choice == "🛠 [5] ማስተካከያ (EDIT)":
         st.header("🛠 ማስተካከያ (EDIT) ማዕከል")
         
