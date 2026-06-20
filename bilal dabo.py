@@ -7,7 +7,6 @@ import requests
 DABO_WAGA = 9
 
 # --- 🌐 SUPABASE CLOUD DATABASE CONFIG ---
-# ⚠️ እዚህ ጋር የራስህን የ Supabase መረጃዎች በትክክል ተካ!
 SUPABASE_URL = "https://fcerzqxtdrlfrtqjubvz.supabase.co"
 SUPABASE_KEY = "sb_publishable_J3ZTXdoo6e3y7RYd44p6SA_PZmtVYdg"
 
@@ -20,8 +19,6 @@ HEADERS = {
 
 # --- 🗄 የዳታቤዝ ረዳት ተግባራት (SUPABASE API) ---
 def init_db():
-    # Supabase ላይ ሰንጠረዦች በራስ-ሰር ይፈጠራሉ ወይም SQL Editor ላይ መፍጠር ይቻላል።
-    # የ መጀመሪያ ማስነሻ ሙከራ 
     pass
 
 def load_dube_record():
@@ -38,8 +35,6 @@ def load_dube_record():
     return dube_data
 
 def save_dube_record(dube_data):
-    # ሁሉንም አጥፍቶ በአዲስ መተካት (ለቀላል አሰራር)
-    # ማሳሰቢያ፡ በ Supabase ላይ Upsert መጠቀም ይመረጣል
     for name, v in dube_data.items():
         payload = {
             "customer_name": name,
@@ -99,18 +94,18 @@ def load_expenses():
     if res.status_code == 200:
         return {"list": res.json()}
     return {"list": []}
+
 def add_expense(item, amount):
     payload = {
         "date": datetime.now().strftime('%Y-%m-%d %H:%M'),
         "item": item,
         "amount": float(amount)
     }
-    # Supabase ራሱ ID እንዲሰጠው ይሄንን Header እንጨምራለን
     headers_expense = HEADERS.copy()
     headers_expense["Prefer"] = "return=representation"
-    
     url = f"{SUPABASE_URL}/rest/v1/expenses"
     requests.post(url, headers=headers_expense, json=payload)
+
 def delete_expense(expense_id):
     url = f"{SUPABASE_URL}/rest/v1/expenses?id=eq.{expense_id}"
     requests.delete(url, headers=HEADERS)
@@ -165,12 +160,10 @@ if check_password():
     if choice == "🚪 ውጣ (Logout)":
         st.session_state.authenticated = False
         st.rerun()
-# --- 🏠 ዋና ገጽ (Dashboard) ---
-   # --- 🏠 ዋና ገጽ (Dashboard) ---
+
+    # --- 🏠 ዋና ገጽ (Dashboard) ---
     if choice == "🏠 ዋና ገጽ (Dashboard)":
         st.header("")
-        
-        # ከ Supabase ላይ የወጪዎችን ዳታ ሰንጠረዥ በቀጥታ ማውረድ
         try:
             url_exp = f"{SUPABASE_URL}/rest/v1/expenses"
             res_exp = requests.get(url_exp, headers=HEADERS)
@@ -178,11 +171,9 @@ if check_password():
         except:
             live_expenses = []
             
-        # የዛሬ አጠቃላይ ስሌቶች
         total_uncollected_dabo = sum(max(0, v.get('original', 0) + v.get('yedere_dube', 0) - v.get('paid', 0)) for v in dube_mezgebiya.values())
         total_uncollected_birr = total_uncollected_dabo * DABO_WAGA
         
-        # የወጪ ድምርን በትክክል ማስላት
         total_expenses = 0
         if isinstance(live_expenses, list):
             total_expenses = sum(float(e.get('amount', 0)) for e in live_expenses)
@@ -196,11 +187,9 @@ if check_password():
         st.write("---")
         st.subheader("🔴 ዱቤ ያልከፈሉ ደንበኞች ስም ዝርዝር")
         
-        # ለዳሽቦርዱ የሚያስፈልገውን ዳታ ብቻ ማዘጋጀት
         dashboard_data = []
         for name, data in dube_mezgebiya.items():
             unpaid_dabo = (data.get('original', 0) + data.get('yedere_dube', 0)) - data.get('paid', 0)
-            
             if unpaid_dabo > 0:
                 unpaid_birr = unpaid_dabo * DABO_WAGA
                 dashboard_data.append({
@@ -210,18 +199,15 @@ if check_password():
                 })
         
         if dashboard_data:
-            import pandas as pd
             df = pd.DataFrame(dashboard_data)
-            # የሰንጠረዡን መለያ ቁጥር (Index) ከ 1 እንዲጀምር ማድረግ
             df.index = df.index + 1
             st.table(df)
         else:
             st.success("🎉 በአሁኑ ሰዓት ምንም ያልተሰበሰበ የዳቦ ዕዳ የለም! ሁሉም ደንበኞች ከፍለው ጨርሰዋል።")
+
     # --- 📝 [1] አዲስ ዱቤ ---
     elif choice == "📝 [1] አዲስ ዱቤ":
         st.header("📝 አዲስ ዱቤ መመዝገቢያ")
-        
-        # 1. አዲስ መመዝገቢያ ፎርም
         with st.form("new_dube_form", clear_on_submit=True):
             name = st.text_input("የደንበኛ ስም").strip()
             count = st.number_input("ለደንበኛው የተሰጠ የዳቦ ብዛት", min_value=1, step=1)
@@ -237,9 +223,7 @@ if check_password():
                 st.rerun()
 
         st.write("---")
-        st.subheader("🔄 የደንበኞች ጠቅላላ ዕዳ ማስተካከያ (ማንኛውንም ዕዳ ያለበትን ሰው ለመቀየር)")
-        
-        # 2. ዕዳ ያለባቸውን ደንበኞች በሙሉ ለይቶ ማውጫ
+        st.subheader("🔄 የደንበኞች ጠቅላላ ዕዳ ማስተካከያ")
         active_debtors = {}
         for k, v in dube_mezgebiya.items():
             total_debt = (v.get('original', 0) + v.get('yedere_dube', 0)) - v.get('paid', 0)
@@ -248,16 +232,12 @@ if check_password():
         
         if active_debtors:
             st.info("💡 ዕዳ ካለባቸው ደንበኞች ውስጥ የፈለጉትን መርጠው ጠቅላላ የዳቦ መጠኑን እዚህ ማስተካከል ይችላሉ።")
-            
             edit_name = st.selectbox("ማስተካከል የሚፈልጉትን ደንበኛ ስም ይምረጡ፦", list(active_debtors.keys()))
             current_total = active_debtors[edit_name]
-            
             st.warning(f"👉 '{edit_name}' አሁን ያለበት ጠቅላላ ያልተከፈለ ዕዳ፦ {current_total} ዳቦ ነው")
-            
             new_total_val = st.number_input("ትክክለኛውን የተስተካከለ ጠቅላላ የዳቦ ብዛት ያስገቡ፦", min_value=0, step=1, value=int(current_total))
             
             col_save, col_del = st.columns(2)
-            
             with col_save:
                 if st.button("💾 የዳቦ መጠን አስተካክል (ቀይር)"):
                     if new_total_val == 0:
@@ -270,7 +250,6 @@ if check_password():
                         dube_mezgebiya[edit_name]['original'] = 0
                         dube_mezgebiya[edit_name]['paid'] = 0
                         st.success(f"🔄 የ {edit_name} ጠቅላላ ዕዳ ወደ {new_total_val} ዳቦ ተስተካክሏል!")
-                    
                     save_dube_record(dube_mezgebiya)
                     st.rerun()
                     
@@ -284,6 +263,7 @@ if check_password():
                     st.rerun()
         else:
             st.write("📅 በአሁኑ ሰዓት ዕዳ ያለበት ምንም ደንበኛ የለም።")
+
     # --- 💰 [2] ዱቤ መቀበያ ---
     elif choice == "💰 [2] ዱቤ መቀበያ":
         st.header("💰 ዱቤ መቀበያ (ቀን ውስጥ)")
@@ -314,29 +294,22 @@ if check_password():
                 st.success(f"✅ ከ {sel_name} {amt} ዳቦ ተቀብለው በ {s_name} መዝገብ ላይ ሰፍሯል!")
 
     # --- 📊 [3] ስራ መዝጊያ ---
-    # --- 👨‍🍳 [2] የስራ መመዝገቢያ (ለሰራተኛ) ---
-    elif choice == "👨‍🍳 [2] የስራ መመዝገቢያ (ለሰራተኛ)":
+    elif choice == "📊 [3] ስራ መዝጊያ":
         st.header("👨‍🍳 የዕለት ተዕለት ስራ መመዝገቢያ ማዕከል")
-        
         staff_name = st.text_input("የሰራተኛው ስም").strip().capitalize()
         
-        # 1. የዳቦ ስርጭት መረጃ ማስገቢያ
         col1, col2 = st.columns(2)
         with col1:
             morning_load = st.number_input("የተረከበው የዳቦ ብዛት (Morning Load)", min_value=0, step=1)
         with col2:
             returned = st.number_input("የመለሰው የዳቦ ብዛት (Returned)", min_value=0, step=1)
             
-        # 2. የዛሬ አዲስ ዱቤዎችን በራስ-ሰር ማስላት
         today_dube_dict = {k: v['original'] for k, v in dube_mezgebiya.items() if v.get('original', 0) > 0}
         total_today_dube_dabo = sum(today_dube_dict.values())
         
         st.info(f"📊 ዛሬ በሲስተሙ የተመዘገበ ጠቅላላ አዲስ ዱቤ፦ {total_today_dube_dabo} ዳቦ")
-        
-        # 3. የዱቤ አሰባሰብ (ከዚህ በፊት የቆየ ዕዳ የከፈሉ ካሉ)
         coll_birr = st.number_input("ዛሬ ከዱቤ የተሰበሰበ ጠቅላላ ብር (ካለ)", min_value=0.0, step=10.0)
         
-        # --- 💸 የሰራተኛ ወጪዎች (ዛሬ ከካሽ ላይ የወጣ) ---
         st.write("---")
         st.subheader("💸 የሰራተኛ ወጪዎች (ዛሬ ከካሽ ላይ የወጣ)")
         has_expense = st.checkbox("💡 ሰራተኛው ዛሬ ከካሽ ላይ ያወጣው ወጪ ካለ እዚህ ይጫኑ")
@@ -352,7 +325,6 @@ if check_password():
                 staff_expense_amount = st.number_input("የወጣው የብር መጠን", min_value=0.0, step=5.0)
         st.write("---")
         
-        # 4. ሂሳብ ማስረከቢያ
         actual_birr = st.number_input("ሰራተኛው በተግባር ያስረከበው የተጣራ ብር (Actual Cash)", min_value=0.0, step=10.0)
         
         if st.button("💾 የዛሬውን ስራ መዝግብና ዝጋ"):
@@ -367,14 +339,10 @@ if check_password():
                 if cash_sold_dabo < 0:
                     st.error("❌ ስህተት፦ የተሸጠው ዳቦ ከዱቤው ያነሰ ነው። እባክዎ የአዲስ ዱቤ መዝገብን ያረጋግጡ!")
                 else:
-                    # የካሽ ሽያጭ ስሌት
                     cash_sold_birr = cash_sold_dabo * DABO_WAGA
-                    
-                    # 🔥 ወጪው ተቀንሶለት ኔጌቲቭ እንዳይመጣ የሚያደርገው ዋናው ስሌት
                     expected_birr = (cash_sold_birr + coll_birr) - staff_expense_amount
                     diff = actual_birr - expected_birr
                     
-                    # ልዩ ID በሰዓት መስሪያ
                     record_id = datetime.now().strftime('%Y%m%d%H%M%S')
                     
                     payload = {
@@ -393,11 +361,9 @@ if check_password():
                         "staff_expense_amount": float(staff_expense_amount)
                     }
                     
-                    # ሀ) ወደ staff_history መላክ
                     url_staff = f"{SUPABASE_URL}/rest/v1/staff_history"
                     requests.post(url_staff, headers=HEADERS, json=payload)
                     
-                    # ለ) ወጪ ካለ ወደ ዋናው የ expenses ሰንጠረዥ ጭምር መላክ (በዳሽቦርድ ላይ እንዲደመር)
                     if staff_expense_amount > 0 and staff_expense_item:
                         payload_exp = {
                             "date": datetime.now().strftime('%Y-%m-%d %H:%M'),
@@ -409,7 +375,6 @@ if check_password():
                         url_exp = f"{SUPABASE_URL}/rest/v1/expenses"
                         requests.post(url_exp, headers=headers_exp, json=payload_exp)
                     
-                    # ሐ) ዱቤ ማዛወር
                     for k, v in dube_mezgebiya.items():
                         if v.get('original', 0) > 0:
                             v['yedere_dube'] = v.get('yedere_dube', 0) + v['original']
@@ -418,10 +383,11 @@ if check_password():
                     save_dube_record(dube_mezgebiya)
                     
                     st.success(f"🎉 የ {staff_name} የዛሬ ሂሳብ በተሳካ ሁኔታ ተዘግቷል!")
-                    st.write(f"💵 ከሰራተኛው የሚጠበቅ የነበረው የተጣራ ብር፦ **{expected_birr} ብር** (ወጪው ተቀንሶለት)")
+                    st.write(f"💵 ከሰራተኛው የሚጠበቅ የነበረው የተጣራ ብር፦ **{expected_birr} ብር**")
                     st.write(f"📊 ልዩነት (Diff)፦ **{diff} ብር**")
                     st.rerun()
-# --- 📜 [4] ሪፖርት ---
+
+    # --- 📜 [4] ሪፖርት ---
     elif choice == "📜 [4] ሪፖርት":
         st.header("🔴 ዱቤ ያልከፈሉ ደንበኞች ስም ዝርዝር")
         rows = []
@@ -469,11 +435,10 @@ if check_password():
                             st.warning(f"⚠️ የ ቀን {rec.get('date','')} የተበላሸው ሪፖርት ብቻ ተሰርዟል!")
                             st.rerun()
         else: st.info("ምንም የሰራተኛ የዕለት ሪፖርት ታሪክ የለም።")
-            # --- 🛠 [5] ማስተካከያ (EDIT) ---
+
     # --- 🛠 [5] ማስተካከያ (EDIT) ---
     elif choice == "🛠 [5] ማስተካከያ (EDIT)":
         st.header("🛠 ማስተካከያ (EDIT) ማዕከል")
-        
         opt_main = st.radio("ማስተካከል የፈለጉትን ምርጫ ይምረጡ፦", [
             "[1] የደንበኛ የዱቤ ሂሳብ ለመቀየር (ወይም አዲስ የተረሳ ደንበኛ ለመጨመር)",
             "[2] የሰራተኛ ያስረከበው ብር (Actual Birr) ለመቀየር",
@@ -514,7 +479,6 @@ if check_password():
             elif matches:
                 sel_day = st.selectbox("ቀን መምረጫ", range(len(matches)), format_func=lambda x: f"ቀን: {matches[x][1]['date']} | ተጠበቀ: {matches[x][1].get('expected_birr',0)} | መጣ: {matches[x][1].get('actual_birr',0)}")
                 sel_id, sel_rec = matches[sel_day]
-                
                 new_actual = st.number_input("ትክክለኛውን ያስረከበውን ብር ያስገቡ", min_value=0.0, value=float(sel_rec["actual_birr"]))
                 
                 if st.button("✅ [2] ብር አስተካክል"):
@@ -527,7 +491,6 @@ if check_password():
         elif opt_main.startswith("[1]"):
             name = st.text_input("የደንበኛ ስም ያስገቡ (የተሳሳተ ወይም የተረሳው ደንበኛ):").strip()
             s_name = st.text_input("የሰራተኛው ስም ያስገቡ:").strip().capitalize()
-            
             matches = [(r_id, r) for r_id, r in staff_history.items() if r.get('staff_name') == s_name]
             
             if s_name and not matches: st.error(f"❌ ሰራተኛው {s_name} አልተገኘም!")
@@ -539,7 +502,6 @@ if check_password():
                 if "collected_names" not in sel_rec: sel_rec["collected_names"] = {}
                 
                 opt = st.radio(f"ለደንበኛው '{name}' ምን አይነት ሂሳብ ነው?", ["[1] አዲስ የወሰደው ዳቦ (New Debt)", "[2] የከፈለው የድሮ ዱቤ (Collected)"])
-                
                 if opt.startswith("[1]"):
                     current_val = sel_rec["today_dube_details"].get(name, 0)
                 else:
@@ -599,5 +561,4 @@ if check_password():
                             st.rerun()
                     st.write("---")
             else:
-                st.info("ምንም የወጪ መዝገብ የለም።")
                 st.info("ምንም የወጪ መዝገብ የለም።")
