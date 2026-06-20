@@ -235,10 +235,11 @@ if check_password():
                 save_dube_record(dube_mezgebiya)
                 st.success(f"✅ ለ {name} {count} ዳቦ ዱቤ ተመዝግቧል!")
                 st.rerun()
-st.write("---")
+
+        st.write("---")
         st.subheader("🔄 የደንበኞች ጠቅላላ ዕዳ ማስተካከያ (ማንኛውንም ዕዳ ያለበትን ሰው ለመቀየር)")
         
-        # 2. ዕዳ ያለባቸውን ደንበኞች በሙሉ ለይቶ ማውጫ (ጠቅላላ ዕዳቸው ከ 0 በላይ የሆኑትን)
+        # 2. ዕዳ ያለባቸውን ደንበኞች በሙሉ ለይቶ ማውጫ
         active_debtors = {}
         for k, v in dube_mezgebiya.items():
             total_debt = (v.get('original', 0) + v.get('yedere_dube', 0)) - v.get('paid', 0)
@@ -248,13 +249,11 @@ st.write("---")
         if active_debtors:
             st.info("💡 ዕዳ ካለባቸው ደንበኞች ውስጥ የፈለጉትን መርጠው ጠቅላላ የዳቦ መጠኑን እዚህ ማስተካከል ይችላሉ።")
             
-            # ደንበኛ መምረጫ
             edit_name = st.selectbox("ማስተካከል የሚፈልጉትን ደንበኛ ስም ይምረጡ፦", list(active_debtors.keys()))
             current_total = active_debtors[edit_name]
             
             st.warning(f"👉 '{edit_name}' አሁን ያለበት ጠቅላላ ያልተከፈለ ዕዳ፦ {current_total} ዳቦ ነው")
             
-            # አዲስ ማስተካከያ ቁጥር ማስገቢያ
             new_total_val = st.number_input("ትክክለኛውን የተስተካከለ ጠቅላላ የዳቦ ብዛት ያስገቡ፦", min_value=0, step=1, value=int(current_total))
             
             col_save, col_del = st.columns(2)
@@ -262,13 +261,11 @@ st.write("---")
             with col_save:
                 if st.button("💾 የዳቦ መጠን አስተካክል (ቀይር)"):
                     if new_total_val == 0:
-                        # ሙሉ በሙሉ ዕዳውን 0 ለማድረግ
                         dube_mezgebiya[edit_name]['original'] = 0
                         dube_mezgebiya[edit_name]['yedere_dube'] = 0
                         dube_mezgebiya[edit_name]['paid'] = 0
-                        st.success(f"🗑 የ {edit_name} ዕዳ ሙሉ በሙሉ ተሰርዟል (0 ሆኗል)!")
+                        st.success(f"🗑️ የ {edit_name} ዕዳ ሙሉ በሙሉ ተሰርዟል!")
                     else:
-                        # አዲሱን መጠን በ 'yedere_dube' ስር ማስተካከል (የድሮውን እና የዛሬውን በአንድ ላይ አጠቃሎ)
                         dube_mezgebiya[edit_name]['yedere_dube'] = new_total_val
                         dube_mezgebiya[edit_name]['original'] = 0
                         dube_mezgebiya[edit_name]['paid'] = 0
@@ -278,12 +275,12 @@ st.write("---")
                     st.rerun()
                     
             with col_del:
-                if st.button("🗑 ይህንን ደንበኛ ሙሉ በሙሉ ዕዳውን ሰርዝ (0 አድርግ)"):
+                if st.button("🗑️ ይህንን ደንበኛ ሙሉ በሙሉ ዕዳውን ሰርዝ (0 አድርግ)"):
                     dube_mezgebiya[edit_name]['original'] = 0
                     dube_mezgebiya[edit_name]['yedere_dube'] = 0
                     dube_mezgebiya[edit_name]['paid'] = 0
                     save_dube_record(dube_mezgebiya)
-                    st.success(f"🗑 የ {edit_name} ዕዳ ሙሉ በሙሉ ተሰርዟል!")
+                    st.success(f"🗑️ የ {edit_name} ዕዳ ሙሉ በሙሉ ተሰርዟል!")
                     st.rerun()
         else:
             st.write("📅 በአሁኑ ሰዓት ዕዳ ያለበት ምንም ደንበኛ የለም።")
