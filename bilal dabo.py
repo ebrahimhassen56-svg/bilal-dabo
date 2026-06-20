@@ -235,7 +235,7 @@ if check_password():
                 save_dube_record(dube_mezgebiya)
                 st.success(f"✅ ለ {name} {count} ዳቦ ዱቤ ተመዝግቧል!")
                 st.rerun()
-[6/20/2026 10:00 AM] Wow: st.write("---")
+st.write("---")
         st.subheader("🔄 የደንበኞች ጠቅላላ ዕዳ ማስተካከያ (ማንኛውንም ዕዳ ያለበትን ሰው ለመቀየር)")
         
         # 2. ዕዳ ያለባቸውን ደንበኞች በሙሉ ለይቶ ማውጫ (ጠቅላላ ዕዳቸው ከ 0 በላይ የሆኑትን)
