@@ -352,7 +352,7 @@ if check_password():
                 ans = st.number_input(f"👉 {name} {qeri_h} አለበት፣ ስንት ሰጠህ?", min_value=0, max_value=int(qeri_h), step=1, key=f"cls_coll_{name}")
                 if ans > 0:
                     collected_names[name] = ans
-[6/20/2026 10:00 AM] Wow: st.write("---")
+                    st.write("---")
             actual_birr = st.number_input("💰 ሰራተኛው ያስረከበው ብር (Actual Birr)", min_value=0.0)
             
             if st.button("💾 የዕለት ሒሳብ ዝጋ"):
