@@ -3,7 +3,7 @@ import pandas as pd
 import json
 from datetime import datetime
 import requests
-
+import time
 DABO_WAGA = 9
 
 # --- 🌐 SUPABASE CLOUD DATABASE CONFIG ---
