@@ -99,7 +99,7 @@ def load_expenses():
     if res.status_code == 200:
         return {"list": res.json()}
     return {"list": []}
-[6/20/2026 10:00 AM] Wow: def add_expense(item, amount):
+def add_expense(item, amount):
     payload = {
         "date": datetime.now().strftime('%Y-%m-%d %H:%M'),
         "item": item,
