@@ -493,7 +493,7 @@ if check_password():
                     save_staff_record_single(sel_id, sel_rec)
                     st.success("✅ ያስረከበው ብር በተሳካ ሁኔታ ተስተካክሏል!")
                     st.rerun()
-[6/20/2026 10:00 AM] Wow: elif opt_main.startswith("[1]"):
+elif opt_main.startswith("[1]"):
             name = st.text_input("የደንበኛ ስም ያስገቡ (የተሳሳተ ወይም የተረሳው ደንበኛ):").strip()
             s_name = st.text_input("የሰራተኛው ስም ያስገቡ:").strip().capitalize()
             
