@@ -470,6 +470,7 @@ if check_password():
                             st.rerun()
         else: st.info("ምንም የሰራተኛ የዕለት ሪፖርት ታሪክ የለም።")
             # --- 🛠 [5] ማስተካከያ (EDIT) ---
+    # --- 🛠 [5] ማስተካከያ (EDIT) ---
     elif choice == "🛠 [5] ማስተካከያ (EDIT)":
         st.header("🛠 ማስተካከያ (EDIT) ማዕከል")
         
@@ -522,7 +523,8 @@ if check_password():
                     save_staff_record_single(sel_id, sel_rec)
                     st.success("✅ ያስረከበው ብር በተሳካ ሁኔታ ተስተካክሏል!")
                     st.rerun()
-elif opt_main.startswith("[1]"):
+
+        elif opt_main.startswith("[1]"):
             name = st.text_input("የደንበኛ ስም ያስገቡ (የተሳሳተ ወይም የተረሳው ደንበኛ):").strip()
             s_name = st.text_input("የሰራተኛው ስም ያስገቡ:").strip().capitalize()
             
@@ -571,8 +573,9 @@ elif opt_main.startswith("[1]"):
                     save_staff_record_single(sel_id, sel_rec)
                     st.success(f"✅ የ {name} ሂሳብ በ {s_name} መዝገብ ላይ በተሳካ ሁኔታ ተስተካክሏል!")
                     st.rerun()
-# --- 💸 [6] ወጪ መመዝገቢያ ---
-elif choice == "💸 [6] ወጪ መመዝገቢያ":
+
+    # --- 💸 [6] ወጪ መመዝገቢያ ---
+    elif choice == "💸 [6] ወጪ መመዝገቢያ":
         st.header("💸 የወጪ መቆጣጠሪያ ማዕከል")
         col1, col2 = st.columns(2)
         with col1:
@@ -596,4 +599,5 @@ elif choice == "💸 [6] ወጪ መመዝገቢያ":
                             st.rerun()
                     st.write("---")
             else:
+                st.info("ምንም የወጪ መዝገብ የለም።")
                 st.info("ምንም የወጪ መዝገብ የለም።")
