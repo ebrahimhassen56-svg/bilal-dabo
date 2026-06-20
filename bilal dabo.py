@@ -392,7 +392,7 @@ if check_password():
                 st.session_state.closing_new_dube = [{"name": "", "amt": 0}]
                 st.success("✅ ሂሳቡ ተዘግቷል።")
                 st.rerun()
-[6/20/2026 10:00 AM] Wow: # --- 📜 [4] ሪፖርት ---
+# --- 📜 [4] ሪፖርት ---
     elif choice == "📜 [4] ሪፖርት":
         st.header("🔴 ዱቤ ያልከፈሉ ደንበኞች ስም ዝርዝር")
         rows = []
