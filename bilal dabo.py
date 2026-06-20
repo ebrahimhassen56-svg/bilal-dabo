@@ -1,8 +1,9 @@
-import streamlit as st
+[6/20/2026 10:00 AM] Wow: import streamlit as st
 import pandas as pd
 import json
 from datetime import datetime
 import requests
+
 DABO_WAGA = 9
 
 # --- 🌐 SUPABASE CLOUD DATABASE CONFIG ---
@@ -98,8 +99,7 @@ def load_expenses():
     if res.status_code == 200:
         return {"list": res.json()}
     return {"list": []}
-
-def add_expense(item, amount):
+[6/20/2026 10:00 AM] Wow: def add_expense(item, amount):
     payload = {
         "date": datetime.now().strftime('%Y-%m-%d %H:%M'),
         "item": item,
@@ -165,8 +165,7 @@ if check_password():
     if choice == "🚪 ውጣ (Logout)":
         st.session_state.authenticated = False
         st.rerun()
-
-    # --- 🏠 ዋና ገጽ (Dashboard) ---
+[6/20/2026 10:00 AM] Wow: # --- 🏠 ዋና ገጽ (Dashboard) ---
    # --- 🏠 ዋና ገጽ (Dashboard) ---
     if choice == "🏠 ዋና ገጽ (Dashboard)":
         st.header("")
@@ -219,7 +218,6 @@ if check_password():
         else:
             st.success("🎉 በአሁኑ ሰዓት ምንም ያልተሰበሰበ የዳቦ ዕዳ የለም! ሁሉም ደንበኞች ከፍለው ጨርሰዋል።")
     # --- 📝 [1] አዲስ ዱቤ ---
-   # --- 📝 [1] አዲስ ዱቤ ---
     elif choice == "📝 [1] አዲስ ዱቤ":
         st.header("📝 አዲስ ዱቤ መመዝገቢያ")
         
@@ -237,11 +235,10 @@ if check_password():
                 save_dube_record(dube_mezgebiya)
                 st.success(f"✅ ለ {name} {count} ዳቦ ዱቤ ተመዝግቧል!")
                 st.rerun()
-
-        st.write("---")
+[6/20/2026 10:00 AM] Wow: st.write("---")
         st.subheader("🔄 የደንበኞች ጠቅላላ ዕዳ ማስተካከያ (ማንኛውንም ዕዳ ያለበትን ሰው ለመቀየር)")
         
-        # 2. ዕዳ ያለባቸውን ደንበኞች በሙሉ ለይቶ ማውጫ
+        # 2. ዕዳ ያለባቸውን ደንበኞች በሙሉ ለይቶ ማውጫ (ጠቅላላ ዕዳቸው ከ 0 በላይ የሆኑትን)
         active_debtors = {}
         for k, v in dube_mezgebiya.items():
             total_debt = (v.get('original', 0) + v.get('yedere_dube', 0)) - v.get('paid', 0)
@@ -251,11 +248,13 @@ if check_password():
         if active_debtors:
             st.info("💡 ዕዳ ካለባቸው ደንበኞች ውስጥ የፈለጉትን መርጠው ጠቅላላ የዳቦ መጠኑን እዚህ ማስተካከል ይችላሉ።")
             
+            # ደንበኛ መምረጫ
             edit_name = st.selectbox("ማስተካከል የሚፈልጉትን ደንበኛ ስም ይምረጡ፦", list(active_debtors.keys()))
             current_total = active_debtors[edit_name]
             
             st.warning(f"👉 '{edit_name}' አሁን ያለበት ጠቅላላ ያልተከፈለ ዕዳ፦ {current_total} ዳቦ ነው")
             
+            # አዲስ ማስተካከያ ቁጥር ማስገቢያ
             new_total_val = st.number_input("ትክክለኛውን የተስተካከለ ጠቅላላ የዳቦ ብዛት ያስገቡ፦", min_value=0, step=1, value=int(current_total))
             
             col_save, col_del = st.columns(2)
@@ -263,11 +262,13 @@ if check_password():
             with col_save:
                 if st.button("💾 የዳቦ መጠን አስተካክል (ቀይር)"):
                     if new_total_val == 0:
+                        # ሙሉ በሙሉ ዕዳውን 0 ለማድረግ
                         dube_mezgebiya[edit_name]['original'] = 0
                         dube_mezgebiya[edit_name]['yedere_dube'] = 0
                         dube_mezgebiya[edit_name]['paid'] = 0
-                        st.success(f"🗑️ የ {edit_name} ዕዳ ሙሉ በሙሉ ተሰርዟል!")
+                        st.success(f"🗑 የ {edit_name} ዕዳ ሙሉ በሙሉ ተሰርዟል (0 ሆኗል)!")
                     else:
+                        # አዲሱን መጠን በ 'yedere_dube' ስር ማስተካከል (የድሮውን እና የዛሬውን በአንድ ላይ አጠቃሎ)
                         dube_mezgebiya[edit_name]['yedere_dube'] = new_total_val
                         dube_mezgebiya[edit_name]['original'] = 0
                         dube_mezgebiya[edit_name]['paid'] = 0
@@ -277,12 +278,12 @@ if check_password():
                     st.rerun()
                     
             with col_del:
-                if st.button("🗑️ ይህንን ደንበኛ ሙሉ በሙሉ ዕዳውን ሰርዝ (0 አድርግ)"):
+                if st.button("🗑 ይህንን ደንበኛ ሙሉ በሙሉ ዕዳውን ሰርዝ (0 አድርግ)"):
                     dube_mezgebiya[edit_name]['original'] = 0
                     dube_mezgebiya[edit_name]['yedere_dube'] = 0
                     dube_mezgebiya[edit_name]['paid'] = 0
                     save_dube_record(dube_mezgebiya)
-                    st.success(f"🗑️ የ {edit_name} ዕዳ ሙሉ በሙሉ ተሰርዟል!")
+                    st.success(f"🗑 የ {edit_name} ዕዳ ሙሉ በሙሉ ተሰርዟል!")
                     st.rerun()
         else:
             st.write("📅 በአሁኑ ሰዓት ዕዳ ያለበት ምንም ደንበኛ የለም።")
@@ -311,13 +312,7 @@ if check_password():
                 staff_history[rec_id]["collected_names"][sel_name] = staff_history[rec_id]["collected_names"].get(sel_name, 0) + amt
                 staff_history[rec_id]["coll_dabo"] = sum(staff_history[rec_id]["collected_names"].values())
                 staff_history[rec_id]["coll_birr"] = staff_history[rec_id]["coll_dabo"] * DABO_WAGA
-                
-                save_dube_record(dube_mezgebiya)
-                save_staff_record_single(rec_id, staff_history[rec_id])
-                st.success(f"✅ ከ {sel_name} {amt} ዳቦ ተቀብለው በ {s_name} መዝገብ ላይ ሰፍሯል!")
-
-    # --- 📊 [3] ስራ መዝጊያ ---
-  [6/20/2026 10:00 AM] Wow: save_dube_record(dube_mezgebiya)
+[6/20/2026 10:00 AM] Wow: save_dube_record(dube_mezgebiya)
                 save_staff_record_single(rec_id, staff_history[rec_id])
                 st.success(f"✅ ከ {sel_name} {amt} ዳቦ ተቀብለው በ {s_name} መዝገብ ላይ ሰፍሯል!")
 
@@ -400,7 +395,7 @@ if check_password():
                 st.session_state.closing_new_dube = [{"name": "", "amt": 0}]
                 st.success("✅ ሂሳቡ ተዘግቷል።")
                 st.rerun()
-    # --- 📜 [4] ሪፖርት ---
+[6/20/2026 10:00 AM] Wow: # --- 📜 [4] ሪፖርት ---
     elif choice == "📜 [4] ሪፖርት":
         st.header("🔴 ዱቤ ያልከፈሉ ደንበኞች ስም ዝርዝር")
         rows = []
@@ -436,20 +431,19 @@ if check_password():
                     col_info, col_del = st.columns([4, 1.5])
                     with col_info:
                         if rec.get("collected_names"):
-                            st.write("💵 **የድሮ ዱቤ የተቀበለው፦**")
+                            st.write("💵 የድሮ ዱቤ የተቀበለው፦")
                             for c_n, c_a in rec["collected_names"].items(): st.write(f"👉 {c_n}: {c_a} ዳቦ ተቀብሏል")
                         if rec.get("today_dube_details"):
-                            st.write("📦 **አዲስ ዱቤ የወሰዱ፦**")
+                            st.write("📦 አዲስ ዱቤ የወሰዱ፦")
                             for n_n, n_a in rec["today_dube_details"].items(): st.write(f"🔸 {n_n}: {n_a} ዳቦ ወስዷል")
-                        st.write(f"📊 **የቀኑ ማጠቃለያ፦** የተጠበቀ ብር: {rec.get('expected_birr',0)} | የገባ ብር: {rec.get('actual_birr',0)} | ልዩነት: {rec.get('diff',0)}")
+                        st.write(f"📊 የቀኑ ማጠቃለያ፦ የተጠበቀ ብር: {rec.get('expected_birr',0)} | የገባ ብር: {rec.get('actual_birr',0)} | ልዩነት: {rec.get('diff',0)}")
                     with col_del:
-                        if st.button("🗑️ ይህንን የዛሬውን ሪፖርት ብቻ አጥፋ", key=f"del_staff_{r_id}"):
+                        if st.button("🗑 ይህንን የዛሬውን ሪፖርት ብቻ አጥፋ", key=f"del_staff_{r_id}"):
                             delete_staff_record(r_id)
                             st.warning(f"⚠️ የ ቀን {rec.get('date','')} የተበላሸው ሪፖርት ብቻ ተሰርዟል!")
                             st.rerun()
         else: st.info("ምንም የሰራተኛ የዕለት ሪፖርት ታሪክ የለም።")
-
-    # --- 🛠 [5] ማስተካከያ (EDIT) ---
+[6/20/2026 10:00 AM] Wow: # --- 🛠 [5] ማስተካከያ (EDIT) ---
     elif choice == "🛠 [5] ማስተካከያ (EDIT)":
         st.header("🛠 ማስተካከያ (EDIT) ማዕከል")
         
@@ -502,8 +496,7 @@ if check_password():
                     save_staff_record_single(sel_id, sel_rec)
                     st.success("✅ ያስረከበው ብር በተሳካ ሁኔታ ተስተካክሏል!")
                     st.rerun()
-
-        elif opt_main.startswith("[1]"):
+[6/20/2026 10:00 AM] Wow: elif opt_main.startswith("[1]"):
             name = st.text_input("የደንበኛ ስም ያስገቡ (የተሳሳተ ወይም የተረሳው ደንበኛ):").strip()
             s_name = st.text_input("የሰራተኛው ስም ያስገቡ:").strip().capitalize()
             
@@ -552,8 +545,7 @@ if check_password():
                     save_staff_record_single(sel_id, sel_rec)
                     st.success(f"✅ የ {name} ሂሳብ በ {s_name} መዝገብ ላይ በተሳካ ሁኔታ ተስተካክሏል!")
                     st.rerun()
-
-    # --- 💸 [6] ወጪ መመዝገቢያ ---
+[6/20/2026 10:00 AM] Wow: # --- 💸 [6] ወጪ መመዝገቢያ ---
     elif choice == "💸 [6] ወጪ መመዝገቢያ":
         st.header("💸 የወጪ መቆጣጠሪያ ማዕከል")
         col1, col2 = st.columns(2)
@@ -570,9 +562,9 @@ if check_password():
                 for exp in expenses_data["list"]:
                     c_text, c_btn = st.columns([3, 1])
                     with c_text:
-                        st.write(f"📅 {exp.get('date','')} | 🏷️ {exp.get('item','')} | 💰 **{exp.get('amount',0)} ብር**")
+                        st.write(f"📅 {exp.get('date','')} | 🏷 {exp.get('item','')} | 💰 {exp.get('amount',0)} ብር")
                     with c_btn:
-                        if st.button("🗑️ አጥፋ", key=f"del_exp_{exp.get('id')}"):
+                        if st.button("🗑 አጥፋ", key=f"del_exp_{exp.get('id')}"):
                             delete_expense(exp.get('id'))
                             st.warning(f"⚠️ የወጪ መዝገብ ተሰርዟል!")
                             st.rerun()
