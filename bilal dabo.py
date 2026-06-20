@@ -572,7 +572,7 @@ elif opt_main.startswith("[1]"):
                     st.success(f"✅ የ {name} ሂሳብ በ {s_name} መዝገብ ላይ በተሳካ ሁኔታ ተስተካክሏል!")
                     st.rerun()
 # --- 💸 [6] ወጪ መመዝገቢያ ---
-elif choice == "💸 [6] ወጪ መመዝገቢያ":
+    elif choice == "💸 [6] ወጪ መመዝገቢያ":
         st.header("💸 የወጪ መቆጣጠሪያ ማዕከል")
         col1, col2 = st.columns(2)
         with col1:
