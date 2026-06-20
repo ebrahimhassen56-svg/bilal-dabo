@@ -386,4 +386,143 @@ if check_password():
                     "ዱቤ(ብር)": r.get('coll_birr',0), "አዲስ ዱ": r.get('new_dube_dabo',0),
                     "የተጠበቀ": r.get('expected_birr',0), "የመጣ": r.get('actual_birr',0), "+/-": r.get('diff',0)
                 })
-            st.dataframe(pd.DataFrame(rep_rows), use_
+            st.dataframe(pd.DataFrame(rep_rows), use_container_width=True)
+            
+            st.subheader("📅 የዕለት ዝርዝር መረጃ")
+            for r_id, rec in staff_recs:
+                with st.expander(f"📅 ሪፖርት ቀን፦ {rec.get('date','')}"):
+                    col_info, col_del = st.columns([4, 1.5])
+                    with col_info:
+                        if rec.get("collected_names"):
+                            st.write("💵 የድሮ ዱቤ የተቀበለው፦")
+                            for c_n, c_a in rec["collected_names"].items(): st.write(f"👉 {c_n}: {c_a} ዳቦ")
+                        if rec.get("today_dube_details"):
+                            st.write("📦 አዲስ ዱቤ የወሰዱ፦")
+                            for n_n, n_a in rec["today_dube_details"].items(): st.write(f"🔸 {n_n}: {n_a} ዳቦ")
+                    with col_del:
+                        if st.button("🗑 ይህንን ሪፖርት አጥፋ", key=f"del_staff_{r_id}"):
+                            delete_staff_record(r_id)
+                            st.warning("⚠️ ሪፖርቱ ተሰርዟል!")
+                            st.rerun()
+        else: st.info("ምንም የሪፖርት ታሪክ የለም።")
+
+    # --- 🛠 [5] ማስተካከያ (EDIT) ---
+    elif choice == "🛠 [5] ማስተካከያ (EDIT)":
+        st.header("🛠 ማስተካከያ (EDIT) ማዕከል")
+        opt_main = st.radio("ማስተካከል የፈለጉትን ምርጫ ይምረጡ፦", [
+            "[1] የደንበኛ የዱቤ ሂሳብ ለመቀየር",
+            "[2] የሰራተኛ ያስረከበው ብር (Actual Birr) ለመቀየር",
+            "[3] የሰራተኛ የወሰደው ወይም የመለሰው ዳቦ ለመቀየር"
+        ])
+        
+        if opt_main.startswith("[3]"):
+            s_name = st.text_input("የሰራተኛውን ስም ያስገቡ:").strip().capitalize()
+            matches = [(r_id, r) for r_id, r in staff_history.items() if r.get('staff_name') == s_name]
+            
+            if s_name and not matches: st.error("❌ ሰራተኛው አልተገኘም!")
+            elif matches:
+                sel_day = st.selectbox("ቀን መምረጫ", range(len(matches)), format_func=lambda x: f"ቀን: {matches[x][1]['date']}")
+                sel_id, sel_rec = matches[sel_day]
+                sub_opt = st.selectbox("ምን መቀየር ይፈልጋሉ?", ["[1] የወሰደው (Morning Load)", "[2] የመለሰው (Returned)"])
+                val = st.number_input("አዲሱን ቁጥር ያስገቡ", min_value=0, step=1, value=int(sel_rec["morning_load"] if sub_opt.startswith("[1]") else sel_rec["returned"]))
+                
+                if st.button("✅ መረጃ አስተካክል"):
+                    if sub_opt.startswith("[1]"): sel_rec["morning_load"] = val
+                    else: sel_rec["returned"] = val
+                    
+                    total_out = sel_rec["morning_load"] - sel_rec["returned"]
+                    sel_rec["cash_sold_dabo"] = total_out - sel_rec.get("new_dube_dabo", 0)
+                    sel_rec["cash_sold_birr"] = sel_rec["cash_sold_dabo"] * DABO_WAGA
+                    sel_rec["expected_birr"] = sel_rec["cash_sold_birr"] + sel_rec.get("coll_birr", 0)
+                    sel_rec["diff"] = sel_rec["actual_birr"] - sel_rec["expected_birr"]
+                    
+                    save_staff_record_single(sel_id, sel_rec)
+                    st.success("✅ በተሳካ ሁኔታ ተስተካክሏል!")
+                    st.rerun()
+
+        elif opt_main.startswith("[2]"):
+            s_name = st.text_input("የሰራተኛውን ስም ያስገቡ:").strip().capitalize()
+            matches = [(r_id, r) for r_id, r in staff_history.items() if r.get('staff_name') == s_name]
+            
+            if s_name and not matches: st.error("❌ ሰራተኛው አልተገኘም!")
+            elif matches:
+                sel_day = st.selectbox("ቀን መምረጫ", range(len(matches)), format_func=lambda x: f"ቀን: {matches[x][1]['date']}")
+                sel_id, sel_rec = matches[sel_day]
+                new_actual = st.number_input("ትክክለኛውን ብር ያስገቡ", min_value=0.0, value=float(sel_rec["actual_birr"]))
+                
+                if st.button("✅ ብር አስተካክል"):
+                    sel_rec["actual_birr"] = new_actual
+                    sel_rec["diff"] = new_actual - sel_rec.get("expected_birr", 0)
+                    save_staff_record_single(sel_id, sel_rec)
+                    st.success("✅ ያስረከበው ብር ተስተካክሏል!")
+                    st.rerun()
+
+        elif opt_main.startswith("[1]"):
+            name = st.text_input("የደንበኛ ስም ያስገቡ:").strip()
+            s_name = st.text_input("የሰራተኛው ስም ያስገቡ:").strip().capitalize()
+            matches = [(r_id, r) for r_id, r in staff_history.items() if r.get('staff_name') == s_name]
+            
+            if s_name and not matches: st.error("❌ ሰራተኛው አልተገኘም!")
+            elif matches and name:
+                sel_day = st.selectbox("ቀን መምረጫ", range(len(matches)), format_func=lambda x: f"ቀን: {matches[x][1]['date']}")
+                sel_id, sel_rec = matches[sel_day]
+                
+                if "today_dube_details" not in sel_rec: sel_rec["today_dube_details"] = {}
+                if "collected_names" not in sel_rec: sel_rec["collected_names"] = {}
+                
+                opt = st.radio("የሂሳብ አይነት", ["[1] አዲስ የወሰደው ዳቦ", "[2] የከፈለው የድሮ ዱቤ"])
+                current_val = sel_rec["today_dube_details"].get(name, 0) if opt.startswith("[1]") else sel_rec["collected_names"].get(name, 0)
+                
+                st.info(f"አሁን ያለው ዋጋ: {current_val} ዳቦ")
+                amt = st.number_input("ትክክለኛውን የዳቦ ብዛት ያስገቡ", min_value=0, step=1, value=int(current_val))
+                
+                if st.button("⚙️ የደንበኛ ዱቤ አስተካክል"):
+                    if opt.startswith("[1]"):
+                        old_v = sel_rec["today_dube_details"].get(name, 0)
+                        sel_rec["today_dube_details"][name] = amt
+                        sel_rec["new_dube_dabo"] = sum(sel_rec["today_dube_details"].values())
+                        if name not in dube_mezgebiya: dube_mezgebiya[name] = {'original':0, 'paid':0, 'yedere_dube':0}
+                        dube_mezgebiya[name]['yedere_dube'] += (amt - old_v)
+                    else:
+                        old_v = sel_rec["collected_names"].get(name, 0)
+                        sel_rec["collected_names"][name] = amt
+                        sel_rec["coll_dabo"] = sum(sel_rec["collected_names"].values())
+                        sel_rec["coll_birr"] = sel_rec["coll_dabo"] * DABO_WAGA
+                        if name not in dube_mezgebiya: dube_mezgebiya[name] = {'original':0, 'paid':0, 'yedere_dube':0}
+                        dube_mezgebiya[name]['yedere_dube'] -= (amt - old_v)
+                        
+                    total_out = sel_rec["morning_load"] - sel_rec["returned"]
+                    sel_rec["cash_sold_dabo"] = total_out - sel_rec.get("new_dube_dabo", 0)
+                    sel_rec["cash_sold_birr"] = sel_rec["cash_sold_dabo"] * DABO_WAGA
+                    sel_rec["expected_birr"] = sel_rec["cash_sold_birr"] + sel_rec.get("coll_birr", 0)
+                    sel_rec["diff"] = sel_rec["actual_birr"] - sel_rec["expected_birr"]
+                    
+                    save_dube_record(dube_mezgebiya)
+                    save_staff_record_single(sel_id, sel_rec)
+                    st.success("✅ ሂሳቡ በተሳካ ሁኔታ ተስተካክሏል!")
+                    st.rerun()
+
+    # --- 💸 [6] ወጪ መመዝገቢያ ---
+    elif choice == "💸 [6] ወጪ መመዝገቢያ":
+        st.header("💸 የወጪ መቆጣጠሪያ ማዕከል")
+        col1, col2 = st.columns(2)
+        with col1:
+            item = st.text_input("የወጣበት ምክንያት/የዕቃ ስም").strip()
+            amount = st.number_input("የወጣው ብር መጠን", min_value=1.0)
+            if st.button("📥 ወጪ መዝግብ") and item:
+                add_expense(item, amount)
+                st.success("✅ ወጪ ተመዝግቧል!")
+                st.rerun()
+        with col2:
+            st.subheader("የወጪዎች ዝርዝር")
+            if expenses_data.get("list"):
+                for exp in expenses_data["list"]:
+                    c_text, c_btn = st.columns([3, 1])
+                    with c_text: st.write(f"🏷 {exp.get('item','')} | 💰 {exp.get('amount',0)} ብር")
+                    with c_btn:
+                        if st.button("🗑 አጥፋ", key=f"del_exp_{exp.get('id')}"):
+                            delete_expense(exp.get('id'))
+                            st.warning("⚠️ የወጪ መዝገብ ተሰርዟል!")
+                            st.rerun()
+                    st.write("---")
+            else: st.info("ምንም የወጪ መዝገብ የለም።")
