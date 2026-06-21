@@ -631,5 +631,3 @@ if check_password():
                         st.info("ምንም የተመዘገበ የዱቄት ፍጆታ የለም።")
                 else:
                     st.info("ምንም የመዝገብ ታሪክ የለም።")
-                else:
-                    st.info("ምንም የወጪ መዝገብ የለም።")
