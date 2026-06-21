@@ -541,26 +541,94 @@ if check_password():
                     st.rerun()
 
     # --- 💸 [6] ወጪ መመዝገቢያ ---
+    # --- 💸 [6] ወጪ መመዝገቢያ ---
     elif choice == "💸 [6] ወጪ መመዝገቢያ":
         st.header("💸 የወጪ መቆጣጠሪያ ማዕከል")
-        col1, col2 = st.columns(2)
-        with col1:
-            item = st.text_input("የወጣበት ምክንያት/የዕቃ ስም").strip()
-            amount = st.number_input("የወጣው ብር መጠን", min_value=1.0)
-            if st.button("📥 ወጪ መዝግብ") and item:
-                add_expense(item, amount)
-                st.success("✅ ወጪ ተመዝግቧል!")
-                st.rerun()
-        with col2:
-            st.subheader("የወጪዎች ዝርዝር")
-            if expenses_data.get("list"):
-                for exp in expenses_data["list"]:
-                    c_text, c_btn = st.columns([3, 1])
-                    with c_text: st.write(f"🏷 {exp.get('item','')} | 💰 {exp.get('amount',0)} ብር")
-                    with c_btn:
-                        if st.button("🗑 አጥፋ", key=f"del_exp_{exp.get('id')}"):
-                            delete_expense(exp.get('id'))
-                            st.warning("⚠️ የወጪ መዝገብ ተሰርዟል!")
-                            st.rerun()
-                    st.write("---")
-            else: st.info("ምንም የወጪ መዝገብ የለም።")
+        st.write("---")
+        
+        # ሰራተኛው መጀመሪያ የሚመርጥባቸው ሁለት ቼክ ቦክሶች
+        st.subheader("🛠 ምን መመዝገብ ይፈልጋሉ? (ከታች ይምረጡ)")
+        col_chk1, col_chk2 = st.columns(2)
+        with col_chk1:
+            show_normal = st.checkbox("🔹 የመደበኛ ዕቃዎች ወጪ መመዝገቢያ", value=False)
+        with col_chk2:
+            show_duket = st.checkbox("🌾 የዱቄት ሂሳብ መመዝገቢያ", value=False)
+            
+        st.write("---")
+        
+        # የትኛው ቼክ ቦክስ እንደበራ አይቶ ገጹን ለሁለት ይከፍለዋል
+        col_left, col_right = st.columns(2)
+        
+        # --- 🔹 [1] የመደበኛ ወጪዎች ክፍል (ቼክ ከተደረገ ብቻ የሚታይ) ---
+        with col_left:
+            if show_normal:
+                st.subheader("📝 መደበኛ ወጪ መመዝገብ")
+                with st.form("normal_expense_form", clear_on_submit=True):
+                    item = st.text_input("የወጣበት ምክንያት/የዕቃ ስም (ምሳሌ፡ የላስቲክ፣ መብራት...)").strip()
+                    amount = st.number_input("የወጣው ብር መጠን", min_value=0.0, step=10.0)
+                    submit_normal = st.form_submit_button("📥 መደበኛ ወጪ መዝግብ")
+                    
+                    if submit_normal and item and amount > 0:
+                        add_expense(item, amount)
+                        st.success("✅ መደበኛ ወጪ ተመዝግቧል!")
+                        st.rerun()
+                
+                st.write("---")
+                st.subheader("📜 የመደበኛ ወጪዎች ዝርዝር")
+                if expenses_data.get("list"):
+                    normal_exps = [e for e in expenses_data["list"] if "🌾 ዱቄት" not in str(e.get('item',''))]
+                    if normal_exps:
+                        for exp in normal_exps:
+                            c_text, c_btn = st.columns([3, 1])
+                            with c_text: 
+                                st.write(f"🏷 {exp.get('item','')} | 💰 **{exp.get('amount',0)} ብር**")
+                                st.caption(f"📅 {exp.get('date','')}")
+                            with c_btn:
+                                if st.button("🗑 አጥፋ", key=f"del_exp_{exp.get('id')}"):
+                                    delete_expense(exp.get('id'))
+                                    st.warning("⚠️ መዝገቡ ተሰርዟል!")
+                                    st.rerun()
+                            st.write("---")
+                    else:
+                        st.info("ምንም መደበኛ የወጪ መዝገብ የለም።")
+                else: 
+                    st.info("ምንም የወጪ መዝገብ የለም።")
+
+        # --- 🌾 [2] የዱቄት ሂሳብ ክፍል (ቼክ ከተደረገ ብቻ የሚታይ) ---
+        with col_right:
+            if show_duket:
+                st.subheader("🌾 የዱቄት ሂሳብ መመዝገቢያ")
+                with st.form("duket_expense_form", clear_on_submit=True):
+                    duket_count = st.number_input("የዱቄት ብዛት (በጆንያ)", min_value=1, step=1)
+                    duket_price = st.number_input("የአንድ ጆንያ ዱቄት ዋጋ (በብር)", min_value=0.0, step=100.0)
+                    
+                    total_duket_cost = duket_count * duket_price
+                    st.write(f"💵 **ጠቅላላ የዱቄት ወጪ፦ {total_duket_cost} ብር**")
+                    submit_duket = st.form_submit_button("🌾 የዱቄት ሂሳብ መዝግብ")
+                    
+                    if submit_duket and total_duket_cost > 0:
+                        duket_label = f"🌾 ዱቄት ({duket_count} ጆንያ)"
+                        add_expense(duket_label, total_duket_cost)
+                        st.success(f"✅ {duket_count} ጆንያ ዱቄት ተመዝግቧል!")
+                        st.rerun()
+                
+                st.write("---")
+                st.subheader("📜 የዱቄት ግዢዎች ታሪክ")
+                if expenses_data.get("list"):
+                    duket_exps = [e for e in expenses_data["list"] if "🌾 ዱቄት" in str(e.get('item',''))]
+                    if duket_exps:
+                        for exp in duket_exps:
+                            c_text, c_btn = st.columns([3, 1])
+                            with c_text: 
+                                st.write(f"📦 {exp.get('item','')} | 💰 **{exp.get('amount',0)} ብር**")
+                                st.caption(f"📅 {exp.get('date','')}")
+                            with c_btn:
+                                if st.button("🗑 አጥፋ", key=f"del_duket_{exp.get('id')}"):
+                                    delete_expense(exp.get('id'))
+                                    st.warning("⚠️ የዱቄት መዝገብ ተሰርዟል!")
+                                    st.rerun()
+                            st.write("---")
+                    else:
+                        st.info("ምንም የተመዘገበ የዱቄት ግዢ የለም።")
+                else:
+                    st.info("ምንም የወጪ መዝገብ የለም።")
