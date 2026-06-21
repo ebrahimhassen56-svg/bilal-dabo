@@ -373,6 +373,7 @@ if check_password():
                 st.rerun()
     # --- 📜 [4] ሪፖርት ---
     # --- 📜 [4] ሪፖርት ---
+    # --- 📜 [4] ሪፖርት ---
     elif choice == "📜 [4] ሪፖርት":
         st.header("🔴 ዱቤ ያልከፈሉ ደንበኞች ስም ዝርዝር")
         rows = []
@@ -397,11 +398,11 @@ if check_password():
             
             rep_rows = []
             for r_id, r in staff_recs:
-                # ከ Expected Birr ቀመር ላይ ተነስተን የወጣውን ወጪ እዚህ ጋር እናሰላዋለን
                 cash_birr = r.get('cash_sold_birr', 0)
-                coll_birr = r.get('coll_birr', 0)
+                coll_dabo = r.get('coll_dabo', 0)  # 👈 የተሰበሰበው ዳቦ መጠን
+                coll_birr = r.get('coll_birr', 0)  # 👈 የተሰበሰበው ብር መጠን
+                
                 expected_birr = r.get('expected_birr', 0)
-                # ወጪ = (የካሽ ሽያጭ + የተሰበሰበ ዱቤ) - ሲስተሙ የጠበቀው ጠቅላላ ብር
                 calculated_expense = (cash_birr + coll_birr) - expected_birr
                 if calculated_expense < 0: calculated_expense = 0
                 
@@ -411,9 +412,10 @@ if check_password():
                     "ገባ": r.get('returned',0),
                     "ካሽ(ዳ)": r.get('cash_sold_dabo',0), 
                     "ካሽ(ብር)": cash_birr,
+                    "ዱቤ(ዳ)": coll_dabo,  # 👈 አዲስ የተጨመረ አምድ (የተሰበሰበ ዳቦ)
                     "ዱቤ(ብር)": coll_birr, 
                     "አዲስ ዱ": r.get('new_dube_dabo',0),
-                    "የዕለት ወጪ": calculated_expense,  # 👈 አዲሱ የወጪ አምድ እዚህ ተጨምሯል
+                    "የዕለት ወጪ": calculated_expense,
                     "የተጠበቀ": expected_birr, 
                     "የመጣ": r.get('actual_birr',0), 
                     "+/-": r.get('diff',0)
@@ -431,13 +433,11 @@ if check_password():
                         if rec.get("collected_names"):
                             st.write("💵 የድሮ ዱቤ የተቀበለው፦")
                             for c_n, c_a in rec["collected_names"].items():
-                                msg = f"👉 {c_n}: {c_a} ዳቦ"
-                                st.write(msg)
+                                st.write(f"👉 {c_n}: {c_a} ዳቦ")
                         if rec.get("today_dube_details"):
                             st.write("📦 አዲስ ዱቤ የወሰዱ፦")
                             for n_n, n_a in rec["today_dube_details"].items():
-                                msg2 = f"🔸 {n_n}: {n_a} ዳቦ"
-                                st.write(msg2)
+                                st.write(f"🔸 {n_n}: {n_a} ዳቦ")
                     with col_del:
                         if st.button("🗑 ይህንን ሪፖርት አጥፋ", key=f"del_staff_{r_id}"):
                             delete_staff_record(r_id)
