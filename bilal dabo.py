@@ -281,6 +281,7 @@ if check_password():
 
     # --- 📊 [3] ስራ መዝጊያ ---
     # --- 📊 [3] ስራ መዝጊያ ---
+    # --- 📊 [3] ስራ መዝጊያ ---
     elif choice == "📊 [3] ስራ መዝጊያ":
         st.header("📊 የዕለት ስራ መዝጊያ")
         s_name = st.text_input("የሰራተኛው ስም").strip().capitalize()
@@ -321,7 +322,7 @@ if check_password():
 
             st.write("---")
             st.subheader("💸 የዕለት ወጪ መመዝገቢያ (ካለ)")
-            exp_item = st.text_input("የወጪ ምክንያት (ምሳሌ፡ የላስቲክ፣ መብራት...)").strip()
+            exp_item = st.text_input("የወጪ ምክንያት (ምሳሌ፡ የላስቲክ...)").strip()
             exp_amount = st.number_input("የወጪ ብር መጠን", min_value=0.0, step=1.0)
 
             st.write("---")
@@ -347,7 +348,7 @@ if check_password():
                 cash_sold_dabo = total_out - new_dube_total
                 cash_sold_birr = cash_sold_dabo * DABO_WAGA
                 
-                # ወጪ ካለ ሂሳብ ላይ ይቀንሳል
+                # 🛠 እዚህ ጋር ነው ወጪው ተቀንሶ ትክክለኛው 'Expected' የሚሰላው!
                 if exp_item and exp_amount > 0:
                     add_expense(f"{s_name}: {exp_item}", exp_amount)
                     expected = cash_sold_birr + coll_birr_sum - exp_amount
@@ -368,7 +369,7 @@ if check_password():
                 save_dube_record(dube_mezgebiya)
                 save_staff_record_single(rec_id, staff_history[rec_id])
                 st.session_state.closing_new_dube = [{"name": "", "amt": 0}]
-                st.success("✅ ሒሳቡ እና ወጪው በተሳካ ሁኔታ ተመዝግቦ ተዘግቷል!")
+                st.success(f"✅ {s_name} የዛሬ ሂሳብ እና ወጪ በተሳካ ሁኔታ ተመዝግቧል!")
                 st.rerun()
     # --- 📜 [4] ሪፖርት ---
     # --- 📜 [4] ሪፖርት ---
