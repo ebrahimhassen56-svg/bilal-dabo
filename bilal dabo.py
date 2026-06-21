@@ -435,27 +435,29 @@ if check_password():
                         else:
                             total_business_expenses += float(exp.get('amount', 0))
             
-            # አጠቃላይ የተሸጠ ዳቦ (በካሽ የተሸጠው + በአዲስ ዱቤ የተሰጠው)
-            total_sold_dabo_all = total_business_cash_dabo + total_business_new_dube_dabo
+            # 🛠 [አዲስ ስሌት]፡ ካሽ ዳቦ + ከዱቤ የተሰበሰበ ዳቦ (በአንድ ላይ የተደመረ)
+            total_collected_dabo_combined = total_business_cash_dabo + total_business_coll_dabo
             
-            # ማጠቃለያውን ለአይን በሚያምር ካርዶች ማሳየት
             st.markdown(f"##### 🏢 ከ **{s_str}** እስከ **{e_str}** የዳቦ ቤቱ አጠቃላይ የተደመረ ሂሳብ፦")
             
+            # የመጀመሪያው ረድፍ ካርዶች
             c1, c2, c3 = st.columns(3)
-            c1.metric("🥖 አጠቃላይ የተሸጠ ዳቦ (ካሽ + አዲስ ዱቤ)", f"{total_sold_dabo_all} ዳቦ", f"በካሽ፡ {total_business_cash_dabo} | በአዲስ ዱቤ፡ {total_business_new_dube_dabo}")
+            # 👈 እዚህ ጋር ሁለቱ በአንድ ላይ ተደምረው ዋና ካርድ ሆኑ
+            c1.metric("🥖 ጠቅላላ የመጣ ዳቦ (ካሽ + የድሮ ዱቤ)", f"{total_collected_dabo_combined} ዳቦ", f"ካሽ፡ {total_business_cash_dabo} | ከድሮ ዱቤ የተመለሰ፦ {total_business_coll_dabo}")
             c2.metric("💰 ማስገባት የነበረባቸው ብር (Expected)", f"{total_business_expected_birr} ብር")
             c3.metric("💵 በትክክል ያመጡት ብር (Actual)", f"{total_business_actual_birr} ብር")
             
             st.write("---")
+            # ሁለተኛው ረድፍ ካርዶች
             c4, c5, c6 = st.columns(3)
-            c4.metric("🔄 ከዱቤ የተሰበሰበ (የመጣ)", f"{total_business_coll_birr} ብር", f"{total_business_coll_dabo} ዳቦ")
+            c4.metric("📈 አዲስ ለደንበኞች የተሰጠ ዱቤ", f"{total_business_new_dube_dabo} ዳቦ")
             c5.metric("💸 የወጣ ጠቅላላ መደበኛ ወጪ", f"{total_business_expenses} ብር")
             c6.metric("🌾 የወጣ ጠቅላላ ዱቄት", f"{total_business_duket_bags} ጆንያ")
             
-            # የትርፍና ኪሳራ/የልዩነት ማሳያ
+            # የትርፍና ኪሳራ ልዩነት ማሳያ
             total_diff = total_business_actual_birr - total_business_expected_birr
             if total_diff >= 0:
-                st.success(f"📈 አጠቃላይ የገንዘብ ልዩነት (ትርፍ/ትርፍ ሰዓት)፦ +{total_diff} ብር")
+                st.success(f"📈 አጠቃላይ የገንዘብ ልዩነት (ትርፍ)፦ +{total_diff} ብር")
             else:
                 st.error(f"📉 አጠቃላይ የገንዘብ ጉድለት (ኪሳራ)፦ {total_diff} ብር")
             
@@ -500,43 +502,7 @@ if check_password():
                 
                 rep_rows.append({
                     "ቀንና ሰዓት": r.get('date',''), 
-                    "ወጣ": r.get('morning_load',0), 
-                    "ገባ": r.get('returned',0),
-                    "ካሽ(ዳ)": r.get('cash_sold_dabo',0), 
-                    "ካሽ(ብር)": cash_birr,
-                    "ዱቤ(ዳ)": coll_dabo,
-                    "ዱቤ(ብር)": coll_birr, 
-                    "አዲስ ዱ": r.get('new_dube_dabo',0),
-                    "የዕለት ወጪ": calculated_expense,
-                    "የተጠበቀ": expected_birr, 
-                    "የመጣ": r.get('actual_birr',0), 
-                    "+/-": r.get('diff',0)
-                })
-            
-            df_rep = pd.DataFrame(rep_rows)
-            st.dataframe(df_rep, use_container_width=True)
-            
-            st.subheader("📅 የዕለት ዝርዝር መረጃ")
-            for r_id, rec in staff_recs:
-                expander_title = f"📅 ሪፖርት ቀን፦ {rec.get('date','')}"
-                with st.expander(expander_title):
-                    col_info, col_del = st.columns([4, 1.5])
-                    with col_info:
-                        if rec.get("collected_names"):
-                            st.write("💵 የድሮ ዱቤ የተቀበለው፦")
-                            for c_n, c_a in rec["collected_names"].items():
-                                st.write(f"👉 {c_n}: {c_a} ዳቦ")
-                        if rec.get("today_dube_details"):
-                            st.write("📦 አዲስ ዱቤ የወሰዱ፦")
-                            for n_n, n_a in rec["today_dube_details"].items():
-                                st.write(f"🔸 {n_n}: {n_a} ዳቦ")
-                    with col_del:
-                        if st.button("🗑 ይህንን ሪፖርት አጥፋ", key=f"del_staff_{r_id}"):
-                            delete_staff_record(r_id)
-                            st.warning("⚠️ ሪፖርቱ ተሰርዟል!")
-                            st.rerun()
-        else: 
-            st.info("ምንም የሪፖርት ታሪክ የለም።")
+                    "ወጣ": r.get('
 
     # --- 🛠 [5] ማስተካከያ (EDIT) ---
     elif choice == "🛠 [5] ማስተካከያ (EDIT)":
