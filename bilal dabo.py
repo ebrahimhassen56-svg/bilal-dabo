@@ -543,7 +543,7 @@ if check_password():
     # --- 💸 [6] ወጪ መመዝገቢያ ---
     # --- 💸 [6] ወጪ መመዝገቢያ ---
     elif choice == "💸 [6] ወጪ መመዝገቢያ":
-        st.header("💸 የወጪ መቆጣጠሪያ ማዕከል")
+        st.header("💸 የወጪ እና የዱቄት ፍጆታ መቆጣጠሪያ")
         st.write("---")
         
         # ሰራተኛው መጀመሪያ የሚመርጥባቸው ሁለት ቼክ ቦክሶች
@@ -552,19 +552,19 @@ if check_password():
         with col_chk1:
             show_normal = st.checkbox("🔹 የመደበኛ ዕቃዎች ወጪ መመዝገቢያ", value=False)
         with col_chk2:
-            show_duket = st.checkbox("🌾 የዱቄት ሂሳብ መመዝገቢያ", value=False)
+            show_duket = st.checkbox("🌾 የዕለት የዱቄት ፍጆታ መመዝገቢያ", value=False)
             
         st.write("---")
         
-        # የትኛው ቼክ ቦክስ እንደበራ አይቶ ገጹን ለሁለት ይከፍለዋል
+        # ገጹን ለሁለት ከፍለን ጎን ለጎን እናሳየዋለን
         col_left, col_right = st.columns(2)
         
-        # --- 🔹 [1] የመደበኛ ወጪዎች ክፍል (ቼክ ከተደረገ ብቻ የሚታይ) ---
+        # --- 🔹 [1] የመደበኛ ወጪዎች ክፍል (ብር ያለበት) ---
         with col_left:
             if show_normal:
                 st.subheader("📝 መደበኛ ወጪ መመዝገብ")
                 with st.form("normal_expense_form", clear_on_submit=True):
-                    item = st.text_input("የወጣበት ምክንያት/የዕቃ ስም (ምሳሌ፡ የላስቲክ፣ መብራት...)").strip()
+                    item = st.text_input("የየዕቃው ስም / የወጣበት ምክንያት (ምሳሌ፡ የላስቲክ፣ መብራት...)").strip()
                     amount = st.number_input("የወጣው ብር መጠን", min_value=0.0, step=10.0)
                     submit_normal = st.form_submit_button("📥 መደበኛ ወጪ መዝግብ")
                     
@@ -594,33 +594,32 @@ if check_password():
                 else: 
                     st.info("ምንም የወጪ መዝገብ የለም።")
 
-        # --- 🌾 [2] የዱቄት ሂሳብ ክፍል (ቼክ ከተደረገ ብቻ የሚታይ) ---
+        # --- 🌾 [2] የዱቄት ፍጆታ ክፍል (የጆንያ ብዛት ብቻ) ---
         with col_right:
             if show_duket:
-                st.subheader("🌾 የዱቄት ሂሳብ መመዝገቢያ")
-                with st.form("duket_expense_form", clear_on_submit=True):
-                    duket_count = st.number_input("የዱቄት ብዛት (በጆንያ)", min_value=1, step=1)
-                    duket_price = st.number_input("የአንድ ጆንያ ዱቄት ዋጋ (በብር)", min_value=0.0, step=100.0)
+                st.subheader("🌾 የዛሬ የዱቄት ፍጆታ መመዝገብ")
+                with st.form("duket_consumption_form", clear_on_submit=True):
+                    # የብር ዋጋው ሙሉ በሙሉ ጠፍቶ የጆንያ ብዛት ብቻ ነው የሚጠይቀው
+                    duket_count = st.number_input("የወጣው የዱቄት ብዛት (በጆንያ)", min_value=1, step=1)
+                    submit_duket = st.form_submit_button("🌾 የዱቄት ብዛት መዝግብ")
                     
-                    total_duket_cost = duket_count * duket_price
-                    st.write(f"💵 **ጠቅላላ የዱቄት ወጪ፦ {total_duket_cost} ብር**")
-                    submit_duket = st.form_submit_button("🌾 የዱቄት ሂሳብ መዝግብ")
-                    
-                    if submit_duket and total_duket_cost > 0:
-                        duket_label = f"🌾 ዱቄት ({duket_count} ጆንያ)"
-                        add_expense(duket_label, total_duket_cost)
-                        st.success(f"✅ {duket_count} ጆንያ ዱቄት ተመዝግቧል!")
+                    if submit_duket and duket_count > 0:
+                        duket_label = f"🌾 ዱቄት ({duket_count} ጆንያ) ወጥቷል"
+                        # በብር ቦታ ላይ 0.0 ቁጭ ይላል (ከገንዘብ ሂሳብ ጋር እንዳይደባለቅ)
+                        add_expense(duket_label, 0.0)
+                        st.success(f"✅ የ {duket_count} ጆንያ ዱቄት ፍጆታ በተሳካ ሁኔታ ተመዝግቧል!")
                         st.rerun()
                 
                 st.write("---")
-                st.subheader("📜 የዱቄት ግዢዎች ታሪክ")
+                st.subheader("📜 የወጡ የዱቄት ጆንያዎች ታሪክ")
                 if expenses_data.get("list"):
                     duket_exps = [e for e in expenses_data["list"] if "🌾 ዱቄት" in str(e.get('item',''))]
                     if duket_exps:
                         for exp in duket_exps:
                             c_text, c_btn = st.columns([3, 1])
                             with c_text: 
-                                st.write(f"📦 {exp.get('item','')} | 💰 **{exp.get('amount',0)} ብር**")
+                                # እዚህ ጋር የጆንያውን ብዛት እና ቀኑን ብቻ ያሳያል
+                                st.write(f"📦 **{exp.get('item','')}**")
                                 st.caption(f"📅 {exp.get('date','')}")
                             with c_btn:
                                 if st.button("🗑 አጥፋ", key=f"del_duket_{exp.get('id')}"):
@@ -629,6 +628,8 @@ if check_password():
                                     st.rerun()
                             st.write("---")
                     else:
-                        st.info("ምንም የተመዘገበ የዱቄት ግዢ የለም።")
+                        st.info("ምንም የተመዘገበ የዱቄት ፍጆታ የለም።")
+                else:
+                    st.info("ምንም የመዝገብ ታሪክ የለም።")
                 else:
                     st.info("ምንም የወጪ መዝገብ የለም።")
