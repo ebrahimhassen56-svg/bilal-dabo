@@ -372,9 +372,76 @@ if check_password():
                 st.success(f"✅ {s_name} የዛሬ ሂሳብ እና ወጪ በተሳካ ሁኔታ ተመዝግቧል!")
                 st.rerun()
     # --- 📜 [4] ሪፖርት ---
-    # --- 📜 [4] ሪፖርት ---
-    # --- 📜 [4] ሪፖርት ---
+# --- 📜 [4] ሪፖርት ---
     elif choice == "📜 [4] ሪፖርት":
+        st.header("📊 የክትትልና የሪፖርት ማዕከል")
+        st.write("---")
+        
+        # --- 📅 [ክፍል 1]፡ የዘመን/የቀን ክልል ማጠቃለያ (እንደ ተጨማሪ ከላይ ለብቻው) ---
+        st.subheader("📅 የዘመን ክልል ማጠቃለያ (የቀን፣ የሳምንት፣ የወር ሪፖርት)")
+        
+        col_d1, col_d2 = st.columns(2)
+        with col_d1:
+            start_date = st.date_input("ከቀን", value=datetime.now())
+        with col_d2:
+            end_date = st.date_input("እስከ ቀን", value=datetime.now())
+            
+        if start_date <= end_date:
+            s_str = start_date.strftime("%Y-%m-%d")
+            e_str = end_date.strftime("%Y-%m-%d")
+            
+            period_cash_dabo = 0
+            period_cash_birr = 0
+            period_coll_dabo = 0
+            period_coll_birr = 0
+            period_new_dube = 0
+            period_expenses = 0
+            period_duket_bags = 0
+            
+            # ከሰራተኞች ታሪክ ላይ መረጃ መውሰድ
+            for r in staff_history.values():
+                r_date_str = r.get('date', '')[:10]
+                if s_str <= r_date_str <= e_str:
+                    period_cash_dabo += r.get('cash_sold_dabo', 0)
+                    period_cash_birr += r.get('cash_sold_birr', 0)
+                    period_coll_dabo += r.get('coll_dabo', 0)
+                    period_coll_birr += r.get('coll_birr', 0)
+                    period_new_dube += r.get('new_dube_dabo', 0)
+            
+            # ከወጪ መዝገብ ላይ መደበኛ ወጪዎችንና ዱቄትን መውሰድ
+            if expenses_data.get("list"):
+                for exp in expenses_data["list"]:
+                    exp_date_str = exp.get('date', '')[:10]
+                    if s_str <= exp_date_str <= e_str:
+                        item_name = str(exp.get('item', ''))
+                        if "🌾 ዱቄት" in item_name:
+                            try:
+                                parts = item_name.split('(')
+                                if len(parts) > 1:
+                                    num_bags = int(parts[1].split(' ')[0])
+                                    period_duket_bags += num_bags
+                            except:
+                                pass
+                        else:
+                            period_expenses += float(exp.get('amount', 0))
+            
+            # ማጠቃለያ ካርዶች
+            st.markdown(f"##### 📝 ከ **{s_str}** እስከ **{e_str}** የነበረው ጠቅላላ ማጠቃለያ፦")
+            c1, c2, c3 = st.columns(3)
+            c1.metric("📦 የተሸጠ ካሽ ዳቦ", f"{period_cash_dabo} ዳቦ", f"{period_cash_birr} ብር")
+            c2.metric("💵 የተሰበሰበ ዱቤ (ካሽ)", f"{period_coll_birr} ብር", f"{period_coll_dabo} ዳቦ")
+            c3.metric("💸 የወጣ መደበኛ ወጪ", f"{period_expenses} ብር")
+            
+            c4, c5 = st.columns(2)
+            c4.metric("🌾 የወጣ ዱቄት ፍጆታ", f"{period_duket_bags} ጆንያ")
+            c5.metric("📈 אዲስ የተሰጠ ዱቤ", f"{period_new_dube} ዳቦ")
+            
+        else:
+            st.error("❌ ስህተት፡ የ 'ከቀን' መጀመሪያ ከ 'እስከ ቀን' ማነስ አለበት!")
+            
+        st.write("---")
+        
+        # --- 🔴 [ክፍል 2]፡ ዱቤ ያልከፈሉ ደንበኞች ስም ዝርዝር ---
         st.header("🔴 ዱቤ ያልከፈሉ ደንበኞች ስም ዝርዝር")
         rows = []
         for k, v in dube_mezgebiya.items():
@@ -389,6 +456,8 @@ if check_password():
             st.success("ምንም የዱቤ ዕዳ የለም። 🎉")
         
         st.write("---")
+        
+        # --- 📜 [ክፍል 3]፡ የድሮው የሰራተኞች የዕለት ሪፖርት ዝርዝር (ልክ እንደ ቀድሞው) ---
         st.header("📜 የሰራተኞች የዕለት ሪፖርት ዝርዝር")
         all_s = sorted(list(set([r['staff_name'] for r in staff_history.values() if 'staff_name' in r])))
         
@@ -399,8 +468,8 @@ if check_password():
             rep_rows = []
             for r_id, r in staff_recs:
                 cash_birr = r.get('cash_sold_birr', 0)
-                coll_dabo = r.get('coll_dabo', 0)  # 👈 የተሰበሰበው ዳቦ መጠን
-                coll_birr = r.get('coll_birr', 0)  # 👈 የተሰበሰበው ብር መጠን
+                coll_dabo = r.get('coll_dabo', 0)
+                coll_birr = r.get('coll_birr', 0)
                 
                 expected_birr = r.get('expected_birr', 0)
                 calculated_expense = (cash_birr + coll_birr) - expected_birr
@@ -412,7 +481,7 @@ if check_password():
                     "ገባ": r.get('returned',0),
                     "ካሽ(ዳ)": r.get('cash_sold_dabo',0), 
                     "ካሽ(ብር)": cash_birr,
-                    "ዱቤ(ዳ)": coll_dabo,  # 👈 አዲስ የተጨመረ አምድ (የተሰበሰበ ዳቦ)
+                    "ዱቤ(ዳ)": coll_dabo,
                     "ዱቤ(ብር)": coll_birr, 
                     "አዲስ ዱ": r.get('new_dube_dabo',0),
                     "የዕለት ወጪ": calculated_expense,
@@ -443,7 +512,8 @@ if check_password():
                             delete_staff_record(r_id)
                             st.warning("⚠️ ሪፖርቱ ተሰርዟል!")
                             st.rerun()
-        else: st.info("ምንም የሪፖርት ታሪክ የለም።")
+        else: 
+            st.info("ምንም የሪፖርት ታሪክ የለም።")
 
     # --- 🛠 [5] ማስተካከያ (EDIT) ---
     elif choice == "🛠 [5] ማስተካከያ (EDIT)":
