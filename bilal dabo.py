@@ -377,8 +377,8 @@ if check_password():
         st.header("📊 የክትትልና የሪፖርት ማዕከል")
         st.write("---")
         
-        # --- 📅 [ክፍል 1]፡ የዘመን/የቀን ክልል ማጠቃለያ (እንደ ተጨማሪ ከላይ ለብቻው) ---
-        st.subheader("📅 የዘመን ክልል ማጠቃለያ (የቀን፣ የሳምንት፣ የወር ሪፖርት)")
+        # --- 📅 [ክፍል 1]፡ የሙሉ ዳቦ ቤቱ የቀን/የሳምንት/የወር ጠቅላላ ማጠቃለያ ሂሳብ ---
+        st.subheader("📅 የአጠቃላይ የቢዝነሱ የዘመን ክልል ማጠቃለያ (የቀን፣ የሳምንት፣ የወር ድምር)")
         
         col_d1, col_d2 = st.columns(2)
         with col_d1:
@@ -390,25 +390,35 @@ if check_password():
             s_str = start_date.strftime("%Y-%m-%d")
             e_str = end_date.strftime("%Y-%m-%d")
             
-            period_cash_dabo = 0
-            period_cash_birr = 0
-            period_coll_dabo = 0
-            period_coll_birr = 0
-            period_new_dube = 0
-            period_expenses = 0
-            period_duket_bags = 0
+            # ለጠቅላላ ቢዝነሱ ድምር ተለዋዋጮች
+            total_business_cash_dabo = 0
+            total_business_cash_birr = 0
+            total_business_new_dube_dabo = 0
             
-            # ከሰራተኞች ታሪክ ላይ መረጃ መውሰድ
+            total_business_coll_dabo = 0
+            total_business_coll_birr = 0
+            
+            total_business_expected_birr = 0
+            total_business_actual_birr = 0
+            
+            total_business_expenses = 0
+            total_business_duket_bags = 0
+            
+            # 1. ከሁሉም ሰራተኞች ታሪክ ላይ መረጃዎችን በአንድ ላይ መደመር
             for r in staff_history.values():
                 r_date_str = r.get('date', '')[:10]
                 if s_str <= r_date_str <= e_str:
-                    period_cash_dabo += r.get('cash_sold_dabo', 0)
-                    period_cash_birr += r.get('cash_sold_birr', 0)
-                    period_coll_dabo += r.get('coll_dabo', 0)
-                    period_coll_birr += r.get('coll_birr', 0)
-                    period_new_dube += r.get('new_dube_dabo', 0)
+                    total_business_cash_dabo += r.get('cash_sold_dabo', 0)
+                    total_business_cash_birr += r.get('cash_sold_birr', 0)
+                    total_business_new_dube_dabo += r.get('new_dube_dabo', 0)
+                    
+                    total_business_coll_dabo += r.get('coll_dabo', 0)
+                    total_business_coll_birr += r.get('coll_birr', 0)
+                    
+                    total_business_expected_birr += r.get('expected_birr', 0)
+                    total_business_actual_birr += r.get('actual_birr', 0)
             
-            # ከወጪ መዝገብ ላይ መደበኛ ወጪዎችንና ዱቄትን መውሰድ
+            # 2. ከወጪ መዝገብ ላይ ወጪና ዱቄት መደመር
             if expenses_data.get("list"):
                 for exp in expenses_data["list"]:
                     exp_date_str = exp.get('date', '')[:10]
@@ -419,22 +429,35 @@ if check_password():
                                 parts = item_name.split('(')
                                 if len(parts) > 1:
                                     num_bags = int(parts[1].split(' ')[0])
-                                    period_duket_bags += num_bags
+                                    total_business_duket_bags += num_bags
                             except:
                                 pass
                         else:
-                            period_expenses += float(exp.get('amount', 0))
+                            total_business_expenses += float(exp.get('amount', 0))
             
-            # ማጠቃለያ ካርዶች
-            st.markdown(f"##### 📝 ከ **{s_str}** እስከ **{e_str}** የነበረው ጠቅላላ ማጠቃለያ፦")
+            # አጠቃላይ የተሸጠ ዳቦ (በካሽ የተሸጠው + በአዲስ ዱቤ የተሰጠው)
+            total_sold_dabo_all = total_business_cash_dabo + total_business_new_dube_dabo
+            
+            # ማጠቃለያውን ለአይን በሚያምር ካርዶች ማሳየት
+            st.markdown(f"##### 🏢 ከ **{s_str}** እስከ **{e_str}** የዳቦ ቤቱ አጠቃላይ የተደመረ ሂሳብ፦")
+            
             c1, c2, c3 = st.columns(3)
-            c1.metric("📦 የተሸጠ ካሽ ዳቦ", f"{period_cash_dabo} ዳቦ", f"{period_cash_birr} ብር")
-            c2.metric("💵 የተሰበሰበ ዱቤ (ካሽ)", f"{period_coll_birr} ብር", f"{period_coll_dabo} ዳቦ")
-            c3.metric("💸 የወጣ መደበኛ ወጪ", f"{period_expenses} ብር")
+            c1.metric("🥖 አጠቃላይ የተሸጠ ዳቦ (ካሽ + አዲስ ዱቤ)", f"{total_sold_dabo_all} ዳቦ", f"በካሽ፡ {total_business_cash_dabo} | በአዲስ ዱቤ፡ {total_business_new_dube_dabo}")
+            c2.metric("💰 ማስገባት የነበረባቸው ብር (Expected)", f"{total_business_expected_birr} ብር")
+            c3.metric("💵 በትክክል ያመጡት ብር (Actual)", f"{total_business_actual_birr} ብር")
             
-            c4, c5 = st.columns(2)
-            c4.metric("🌾 የወጣ ዱቄት ፍጆታ", f"{period_duket_bags} ጆንያ")
-            c5.metric("📈 אዲስ የተሰጠ ዱቤ", f"{period_new_dube} ዳቦ")
+            st.write("---")
+            c4, c5, c6 = st.columns(3)
+            c4.metric("🔄 ከዱቤ የተሰበሰበ (የመጣ)", f"{total_business_coll_birr} ብር", f"{total_business_coll_dabo} ዳቦ")
+            c5.metric("💸 የወጣ ጠቅላላ መደበኛ ወጪ", f"{total_business_expenses} ብር")
+            c6.metric("🌾 የወጣ ጠቅላላ ዱቄት", f"{total_business_duket_bags} ጆንያ")
+            
+            # የትርፍና ኪሳራ/የልዩነት ማሳያ
+            total_diff = total_business_actual_birr - total_business_expected_birr
+            if total_diff >= 0:
+                st.success(f"📈 አጠቃላይ የገንዘብ ልዩነት (ትርፍ/ትርፍ ሰዓት)፦ +{total_diff} ብር")
+            else:
+                st.error(f"📉 አጠቃላይ የገንዘብ ጉድለት (ኪሳራ)፦ {total_diff} ብር")
             
         else:
             st.error("❌ ስህተት፡ የ 'ከቀን' መጀመሪያ ከ 'እስከ ቀን' ማነስ አለበት!")
@@ -457,7 +480,7 @@ if check_password():
         
         st.write("---")
         
-        # --- 📜 [ክፍል 3]፡ የድሮው የሰራተኞች የዕለት ሪፖርት ዝርዝር (ልክ እንደ ቀድሞው) ---
+        # --- 📜 [ክፍል 3]፡ የሰራተኞች የዕለት ሪፖርት ዝርዝር (ልክ እንደ ዱሮው) ---
         st.header("📜 የሰራተኞች የዕለት ሪፖርት ዝርዝር")
         all_s = sorted(list(set([r['staff_name'] for r in staff_history.values() if 'staff_name' in r])))
         
