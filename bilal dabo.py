@@ -136,6 +136,7 @@ def check_password():
         if st.button("🚪 ግባ (Login)"):
             if username == "bilal" and password == "dabo1234":
                 st.session_state.authenticated = True
+                st.session_state.authenticated = True
                 st.rerun()
             else:
                 st.error("❌ የተሳሳተ የተጠቃሚ ስም ወይም የይለፍ ቃል!")
@@ -280,8 +281,6 @@ if check_password():
                 st.rerun()
 
     # --- 📊 [3] ስራ መዝጊያ ---
-    # --- 📊 [3] ስራ መዝጊያ ---
-    # --- 📊 [3] ስራ መዝጊያ ---
     elif choice == "📊 [3] ስራ መዝጊያ":
         st.header("📊 የዕለት ስራ መዝጊያ")
         s_name = st.text_input("የሰራተኛው ስም").strip().capitalize()
@@ -371,8 +370,8 @@ if check_password():
                 st.session_state.closing_new_dube = [{"name": "", "amt": 0}]
                 st.success(f"✅ {s_name} የዛሬ ሂሳብ እና ወጪ በተሳካ ሁኔታ ተመዝግቧል!")
                 st.rerun()
+
     # --- 📜 [4] ሪፖርት ---
-# --- 📜 [4] ሪፖርት ---
     elif choice == "📜 [4] ሪፖርት":
         st.header("📊 የክትትልና የሪፖርት ማዕከል")
         st.write("---")
@@ -542,6 +541,7 @@ if check_password():
                             st.rerun()
         else: 
             st.info("ምንም የሪፖርት ታሪክ የለም።")
+
     # --- 🛠 [5] ማስተካከያ (EDIT) ---
     elif choice == "🛠 [5] ማስተካከያ (EDIT)":
         st.header("🛠 ማስተካከያ (EDIT) ማዕከል")
@@ -639,93 +639,78 @@ if check_password():
                     st.rerun()
 
     # --- 💸 [6] ወጪ መመዝገቢያ ---
-    # --- 💸 [6] ወጪ መመዝገቢያ ---
     elif choice == "💸 [6] ወጪ መመዝገቢያ":
         st.header("💸 የወጪ እና የዱቄት ፍጆታ መቆጣጠሪያ")
         st.write("---")
         
-        # ሰራተኛው መጀመሪያ የሚመርጥባቸው ሁለት ቼክ ቦክሶች
         st.subheader("🛠 ምን መመዝገብ ይፈልጋሉ? (ከታች ይምረጡ)")
-        col_chk1, col_chk2 = st.columns(2)
+        col_chk1, col_chk2, col_chk3 = st.columns(3)
         with col_chk1:
             show_normal = st.checkbox("🔹 የመደበኛ ዕቃዎች ወጪ መመዝገቢያ", value=False)
         with col_chk2:
             show_duket = st.checkbox("🌾 የዕለት የዱቄት ፍጆታ መመዝገቢያ", value=False)
+        with col_chk3:
+            show_recycle = st.checkbox("🔄 የሪሳይክል (የተበላሸ) ዳቦ መመዝገቢያ", value=False)
             
         st.write("---")
+        col_left, col_middle, col_right = st.columns(3)
         
-        # ገጹን ለሁለት ከፍለን ጎን ለጎን እናሳየዋለን
-        col_left, col_right = st.columns(2)
-        
-        # --- 🔹 [1] የመደበኛ ወጪዎች ክፍል (ብር ያለበት) ---
+        # --- 🔹 [1] የመደበኛ ወጪዎች ክፍል ---
         with col_left:
             if show_normal:
                 st.subheader("📝 መደበኛ ወጪ መመዝገብ")
                 with st.form("normal_expense_form", clear_on_submit=True):
-                    item = st.text_input("የየዕቃው ስም / የወጣበት ምክንያት (ምሳሌ፡ የላስቲክ፣ መብራት...)").strip()
+                    item = st.text_input("የየዕቃው ስም / የወጣበት ምክንያት (ምሳሌ፡ የላስቲክ...)").strip()
                     amount = st.number_input("የወጣው ብር መጠን", min_value=0.0, step=10.0)
                     submit_normal = st.form_submit_button("📥 መደበኛ ወጪ መዝግብ")
                     
                     if submit_normal and item and amount > 0:
                         add_expense(item, amount)
-                        st.success("✅ መደበኛ ወጪ ተመዝግቧል!")
+                        st.success(f"✅ ወጪ፡ {item} በ {amount} ብር ተመዝግቧል!")
                         st.rerun()
-                
-                st.write("---")
-                st.subheader("📜 የመደበኛ ወጪዎች ዝርዝር")
-                if expenses_data.get("list"):
-                    normal_exps = [e for e in expenses_data["list"] if "🌾 ዱቄት" not in str(e.get('item',''))]
-                    if normal_exps:
-                        for exp in normal_exps:
-                            c_text, c_btn = st.columns([3, 1])
-                            with c_text: 
-                                st.write(f"🏷 {exp.get('item','')} | 💰 **{exp.get('amount',0)} ብር**")
-                                st.caption(f"📅 {exp.get('date','')}")
-                            with c_btn:
-                                if st.button("🗑 አጥፋ", key=f"del_exp_{exp.get('id')}"):
-                                    delete_expense(exp.get('id'))
-                                    st.warning("⚠️ መዝገቡ ተሰርዟል!")
-                                    st.rerun()
-                            st.write("---")
-                    else:
-                        st.info("ምንም መደበኛ የወጪ መዝገብ የለም።")
-                else: 
-                    st.info("ምንም የወጪ መዝገብ የለም።")
-
-        # --- 🌾 [2] የዱቄት ፍጆታ ክፍል (የጆንያ ብዛት ብቻ) ---
-        with col_right:
+                        
+        # --- 🌾 [2] የዱቄት ፍጆታ መመዝገቢያ ክፍል ---
+        with col_middle:
             if show_duket:
-                st.subheader("🌾 የዛሬ የዱቄት ፍጆታ መመዝገብ")
-                with st.form("duket_consumption_form", clear_on_submit=True):
-                    # የብር ዋጋው ሙሉ በሙሉ ጠፍቶ የጆንያ ብዛት ብቻ ነው የሚጠይቀው
-                    duket_count = st.number_input("የወጣው የዱቄት ብዛት (በጆንያ)", min_value=1, step=1)
-                    submit_duket = st.form_submit_button("🌾 የዱቄት ብዛት መዝግብ")
+                st.subheader("🌾 የዱቄት ፍጆታ መመዝገብ")
+                with st.form("duket_expense_form", clear_on_submit=True):
+                    bags_count = st.number_input("የተጠቀሙት የዱቄት ጆንያ ብዛት", min_value=1, step=1)
+                    submit_duket = st.form_submit_button("🌾 ዱቄት መዝግብ")
                     
-                    if submit_duket and duket_count > 0:
-                        duket_label = f"🌾 ዱቄት ({duket_count} ጆንያ) ወጥቷል"
-                        # በብር ቦታ ላይ 0.0 ቁጭ ይላል (ከገንዘብ ሂሳብ ጋር እንዳይደባለቅ)
-                        add_expense(duket_label, 0.0)
-                        st.success(f"✅ የ {duket_count} ጆንያ ዱቄት ፍጆታ በተሳካ ሁኔታ ተመዝግቧል!")
+                    if submit_duket and bags_count > 0:
+                        add_expense(f"🌾 ዱቄት ({bags_count} ጆንያ)", 0.0)
+                        st.success(f"✅ {bags_count} ጆንያ ዱቄት በፍጆታነት ተመዝግቧል!")
                         st.rerun()
+
+        # --- 🔄 [3] የሪሳይክል (የተበላሸ) ዳቦ መመዝገቢያ ክፍል ---
+        with col_right:
+            if show_recycle:
+                st.subheader("🔄 የሪሳይክል ዳቦ መመዝገብ")
+                with st.form("recycle_expense_form", clear_on_submit=True):
+                    recycle_count = st.number_input("የተበላሸ/ሪሳይክል የዳቦ ብዛት", min_value=1, step=1)
+                    submit_recycle = st.form_submit_button("🔄 ሪሳይክል መዝግብ")
+                    
+                    if submit_recycle and recycle_count > 0:
+                        add_expense(f"🔄 ሪሳይክል ({recycle_count} ዳቦ)", 0.0)
+                        st.success(f"✅ {recycle_count} የተበላሸ ዳቦ በሪሳይክልነት ተመዝግቧል!")
+                        st.rerun()
+
+        # የወጪ ታሪኮችን ማሳያ ሰንጠረዥ (ከስር)
+        st.write("---")
+        st.subheader("📜 በቅርብ ጊዜ የተመዘገቡ ወጪዎችና ፍጆታዎች")
+        if expenses_data.get("list"):
+            df_exp = pd.DataFrame(expenses_data["list"])
+            if not df_exp.empty:
+                df_exp = df_exp.sort_values(by="date", ascending=False)
+                df_exp.columns = ["ማስተካከያ ID", "ቀንና ሰዓት", "የወጣበት ምክንያት / ዕቃ", "የወጣው ብር"]
+                st.dataframe(df_exp, use_container_width=True)
                 
                 st.write("---")
-                st.subheader("📜 የወጡ የዱቄት ጆንያዎች ታሪክ")
-                if expenses_data.get("list"):
-                    duket_exps = [e for e in expenses_data["list"] if "🌾 ዱቄት" in str(e.get('item',''))]
-                    if duket_exps:
-                        for exp in duket_exps:
-                            c_text, c_btn = st.columns([3, 1])
-                            with c_text: 
-                                # እዚህ ጋር የጆንያውን ብዛት እና ቀኑን ብቻ ያሳያል
-                                st.write(f"📦 **{exp.get('item','')}**")
-                                st.caption(f"📅 {exp.get('date','')}")
-                            with c_btn:
-                                if st.button("🗑 አጥፋ", key=f"del_duket_{exp.get('id')}"):
-                                    delete_expense(exp.get('id'))
-                                    st.warning("⚠️ የዱቄት መዝገብ ተሰርዟል!")
-                                    st.rerun()
-                            st.write("---")
-                    else:
-                        st.info("ምንም የተመዘገበ የዱቄት ፍጆታ የለም።")
-                else:
-                    st.info("ምንም የመዝገብ ታሪክ የለም።")
+                st.subheader("🗑 ወጪዎችን የመሰረዣ ክፍል")
+                del_id = st.number_input("ሊያጠፉት የፈለጉትን ወጪ የ 'ማስተካከያ ID' ያስገቡ፦", min_value=1, step=1)
+                if st.button("❌ ወጪውን ሙሉ በሙሉ ሰርዝ"):
+                    delete_expense(del_id)
+                    st.warning(f"⚠️ የID {del_id} መረጃ ተሰርዟል!")
+                    st.rerun()
+        else:
+            st.info("ምንም የተመዘገበ ወጪ የለም።")
