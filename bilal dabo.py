@@ -245,7 +245,8 @@ if check_password():
                     st.success("🔄 ተስተካክሏል!")
                     st.rerun()
             with col_del:
-                if st.button("🗑 ዕዳ ሙሉ በሙሉ ሰርዝ"):
+                confirm_del_debt = st.checkbox("🗑 በእርግጠኝነት ይጥፋ?", key=f"conf_del_debt_{edit_name}")
+                if st.button("🗑 ዕዳ ሙሉ በሙሉ ሰርዝ", disabled=not confirm_del_debt):
                     dube_mezgebiya[edit_name].update({'original': 0, 'yedere_dube': 0, 'paid': 0})
                     save_dube_record(dube_mezgebiya)
                     st.success("🗑 ተሰርዟል!")
@@ -683,7 +684,8 @@ if check_password():
                                 st.write(f"🏷 {exp.get('item','')} | 💰 **{exp.get('amount',0)} ብር**")
                                 st.caption(f"📅 {exp.get('date','')}")
                             with c_btn:
-                                if st.button("🗑 አጥፋ", key=f"del_exp_{exp.get('id')}"):
+                                confirm_del_exp = st.checkbox("🗑 እርግጠኛ ነህ?", key=f"conf_del_exp_{exp.get('id')}")
+                                if st.button("🗑 አጥፋ", key=f"del_exp_{exp.get('id')}", disabled=not confirm_del_exp):
                                     delete_expense(exp.get('id'))
                                     st.warning("⚠️ መዝገቡ ተሰርዟል!")
                                     st.rerun()
@@ -721,7 +723,8 @@ if check_password():
                                 st.write(f"📦 **{exp.get('item','')}**")
                                 st.caption(f"📅 {exp.get('date','')}")
                             with c_btn:
-                                if st.button("🗑 አጥፋ", key=f"del_duket_{exp.get('id')}"):
+                                confirm_del_duket = st.checkbox("🗑 እርግጠኛ ነህ?", key=f"conf_del_duket_{exp.get('id')}")
+                                if st.button("🗑 አጥፋ", key=f"del_duket_{exp.get('id')}", disabled=not confirm_del_duket):
                                     delete_expense(exp.get('id'))
                                     st.warning("⚠️ የዱቄት መዝገብ ተሰርዟል!")
                                     st.rerun()
