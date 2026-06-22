@@ -536,7 +536,8 @@ if check_password():
                             for n_n, n_a in rec["today_dube_details"].items():
                                 st.write(f"🔸 {n_n}: {n_a} ዳቦ")
                     with col_del:
-                        if st.button("🗑 ይህንን ሪፖርት አጥፋ", key=f"del_staff_{r_id}"):
+                        confirm_delete = st.checkbox("🗑 በእርግጠኝነት ይጥፋ?", key=f"conf_del_{r_id}")
+                        if st.button("❌ ሪፖርት አጥፋ", key=f"del_staff_{r_id}", disabled=not confirm_delete):
                             delete_staff_record(r_id)
                             st.warning("⚠️ ሪፖርቱ ተሰርዟል!")
                             st.rerun()
