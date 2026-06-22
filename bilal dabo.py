@@ -88,23 +88,6 @@ def delete_staff_record(r_id):
     url = f"{SUPABASE_URL}/rest/v1/staff_history?record_id=eq.{r_id}"
     requests.delete(url, headers=HEADERS)
 
-# --- 🗑 የሪሳይክል ቢን ረዳት ተግባራት ---
-def load_recycle_bin():
-    if "recycle_bin_db" not in st.session_state:
-        st.session_state.recycle_bin_db = {}
-    return st.session_state.recycle_bin_db
-
-def move_to_recycle_bin(r_id, r_data):
-    recycle_db = load_recycle_bin()
-    recycle_db[r_id] = r_data
-    st.session_state.recycle_bin_db = recycle_db
-
-def remove_from_recycle_bin(r_id):
-    recycle_db = load_recycle_bin()
-    if r_id in recycle_db:
-        del recycle_db[r_id]
-        st.session_state.recycle_bin_db = recycle_db
-
 def load_expenses():
     url = f"{SUPABASE_URL}/rest/v1/expenses?select=*"
     res = requests.get(url, headers=HEADERS)
@@ -171,7 +154,6 @@ if check_password():
         "📜 [4] ሪፖርት",
         "🛠 [5] ማስተካከያ (EDIT)", 
         "💸 [6] ወጪ መመዝገቢያ",
-        "🗑 ሪሳይክል ቢን (Recycle Bin)",
         "🚪 ውጣ (Logout)"
     ]
     choice = st.sidebar.selectbox("የአሰሳ ማውጫ", menu)
@@ -275,7 +257,7 @@ if check_password():
         s_name = st.text_input("ተቀባይ ሰራተኛ ስም").strip().capitalize()
         custs = [n for n, d in dube_mezgebiya.items() if (d.get('yedere_dube', 0) + d['original'] - d['paid']) > 0]
         
-        if not custs: st.info("ምንም ዕዳ ያለበት ደንበኛ የለም。")
+        if not custs: st.info("ምንም ዕዳ ያለበት ደንበኛ የለም።")
         elif s_name:
             sel_name = st.selectbox("የደንበኛ ስም ይምረጡ", custs)
             d = dube_mezgebiya[sel_name]
@@ -297,6 +279,8 @@ if check_password():
                 st.success(f"✅ ከ {sel_name} ተቀብሏል!")
                 st.rerun()
 
+    # --- 📊 [3] ስራ መዝጊያ ---
+    # --- 📊 [3] ስራ መዝጊያ ---
     # --- 📊 [3] ስራ መዝጊያ ---
     elif choice == "📊 [3] ስራ መዝጊያ":
         st.header("📊 የዕለት ስራ መዝጊያ")
@@ -364,6 +348,7 @@ if check_password():
                 cash_sold_dabo = total_out - new_dube_total
                 cash_sold_birr = cash_sold_dabo * DABO_WAGA
                 
+                # 🛠 እዚህ ጋር ነው ወጪው ተቀንሶ ትክክለኛው 'Expected' የሚሰላው!
                 if exp_item and exp_amount > 0:
                     add_expense(f"{s_name}: {exp_item}", exp_amount)
                     expected = cash_sold_birr + coll_birr_sum - exp_amount
@@ -386,14 +371,16 @@ if check_password():
                 st.session_state.closing_new_dube = [{"name": "", "amt": 0}]
                 st.success(f"✅ {s_name} የዛሬ ሂሳብ እና ወጪ በተሳካ ሁኔታ ተመዝግቧል!")
                 st.rerun()
-
     # --- 📜 [4] ሪፖርት ---
+# --- 📜 [4] ሪፖርት ---
     elif choice == "📜 [4] ሪፖርት":
         st.header("📊 የክትትልና የሪፖርት ማዕከል")
         st.write("---")
         
+        # 🛠 ቼክቦክስ - ማጠቃለያውን ለማሳየት/ለመደበቅ
         show_summary = st.checkbox("📊 የአጠቃላይ ቢዝነስ ማጠቃለያ ለማየት እዚህ ጋ ያብሩ", value=False)
         
+        # --- 📅 [ክፍል 1]፡ የሙሉ ዳቦ ቤቱ የቀን/የሳምንት/የወር ጠቅላላ ማጠቃለያ ሂሳብ (በቼክቦክስ የሚመራ) ---
         if show_summary:
             st.subheader("📅 የአጠቃላይ የቢዝነሱ የዘመን ክልል ማጠቃለያ (የቀን፣ የሳምንት፣ የወር ድምር)")
             
@@ -407,6 +394,7 @@ if check_password():
                 s_str = start_date.strftime("%Y-%m-%d")
                 e_str = end_date.strftime("%Y-%m-%d")
                 
+                # ለጠቅላላ ቢዝነሱ ድምር ተለዋዋጮች
                 total_business_cash_dabo = 0
                 total_business_cash_birr = 0
                 total_business_new_dube_dabo = 0
@@ -420,6 +408,7 @@ if check_password():
                 total_business_expenses = 0
                 total_business_duket_bags = 0
                 
+                # 1. ከሁሉም ሰራተኞች ታሪክ ላይ መረጃዎችን በአንድ ላይ መደመር
                 for r in staff_history.values():
                     r_date_str = r.get('date', '')[:10]
                     if s_str <= r_date_str <= e_str:
@@ -433,6 +422,7 @@ if check_password():
                         total_business_expected_birr += r.get('expected_birr', 0)
                         total_business_actual_birr += r.get('actual_birr', 0)
                 
+                # 2. ከወጪ መዝገብ ላይ ወጪና ዱቄት መደመር
                 if expenses_data.get("list"):
                     for exp in expenses_data["list"]:
                         exp_date_str = exp.get('date', '')[:10]
@@ -449,21 +439,25 @@ if check_password():
                             else:
                                 total_business_expenses += float(exp.get('amount', 0))
                 
+                # ካሽ ዳቦ + ከዱቤ የተሰበሰበ ዳቦ (በአንድ ላይ የተደመረ)
                 total_collected_dabo_combined = total_business_cash_dabo + total_business_coll_dabo
                 
                 st.markdown(f"##### 🏢 ከ **{s_str}** እስከ **{e_str}** የዳቦ ቤቱ አጠቃላይ የተደመረ ሂሳብ፦")
                 
+                # የመጀመሪያው ረድፍ ካርዶች
                 c1, c2, c3 = st.columns(3)
                 c1.metric("🥖 ጠቅላላ የመጣ ዳቦ (ካሽ + የድሮ ዱቤ)", f"{total_collected_dabo_combined} ዳቦ", f"ካሽ፡ {total_business_cash_dabo} | ከድሮ ዱቤ የተመለሰ፦ {total_business_coll_dabo}")
                 c2.metric("💰 ማስገባት የነበረባቸው ብር (Expected)", f"{total_business_expected_birr} ብር")
                 c3.metric("💵 በትክክል ያመጡት ብር (Actual)", f"{total_business_actual_birr} ብር")
                 
                 st.write("---")
+                # ሁለተኛው ረድፍ ካርዶች
                 c4, c5, c6 = st.columns(3)
                 c4.metric("📈 አዲስ ለደንበኞች የተሰጠ ዱቤ", f"{total_business_new_dube_dabo} ዳቦ")
                 c5.metric("💸 የወጣ ጠቅላላ መደበኛ ወጪ", f"{total_business_expenses} ብር")
                 c6.metric("🌾 የወጣ ጠቅላላ ዱቄት", f"{total_business_duket_bags} ጆንያ")
                 
+                # የትርፍና ኪሳራ ልዩነት ማሳያ
                 total_diff = total_business_actual_birr - total_business_expected_birr
                 if total_diff >= 0:
                     st.success(f"📈 አጠቃላይ የገንዘብ ልዩነት (ትርፍ)፦ +{total_diff} ብር")
@@ -475,6 +469,7 @@ if check_password():
                 
         st.write("---")
         
+        # --- 🔴 [ክፍል 2]፡ ዱቤ ያልከፈሉ ደንበኞች ስም ዝርዝር ---
         st.header("🔴 ዱቤ ያልከፈሉ ደንበኞች ስም ዝርዝር")
         rows = []
         for k, v in dube_mezgebiya.items():
@@ -490,6 +485,7 @@ if check_password():
         
         st.write("---")
         
+        # --- 📜 [ክፍል 3]፡ የሰራተኞች የዕለት ሪፖርት ዝርዝር ---
         st.header("📜 የሰራተኞች የዕለት ሪፖርት ዝርዝር")
         all_s = sorted(list(set([r['staff_name'] for r in staff_history.values() if 'staff_name' in r])))
         
@@ -540,15 +536,12 @@ if check_password():
                             for n_n, n_a in rec["today_dube_details"].items():
                                 st.write(f"🔸 {n_n}: {n_a} ዳቦ")
                     with col_del:
-                        # 🛠 እዚህ ጋር ነው ሙሉ በሙሉ ከመጥፋት ይልቅ ወደ ሪሳይክል ቢን የሚላከው!
                         if st.button("🗑 ይህንን ሪፖርት አጥፋ", key=f"del_staff_{r_id}"):
-                            move_to_recycle_bin(r_id, rec) # ወደ ሪሳይክል ቢን መላኪያ
-                            delete_staff_record(r_id)       # ከዋናው ዳታቤዝ ማጥፊያ
-                            st.warning("⚠️ ሪፖርቱ ወደ ሪሳይክል ቢን ተዛውሯል!")
+                            delete_staff_record(r_id)
+                            st.warning("⚠️ ሪፖርቱ ተሰርዟል!")
                             st.rerun()
         else: 
             st.info("ምንም የሪፖርት ታሪክ የለም።")
-
     # --- 🛠 [5] ማስተካከያ (EDIT) ---
     elif choice == "🛠 [5] ማስተካከያ (EDIT)":
         st.header("🛠 ማስተካከያ (EDIT) ማዕከል")
@@ -646,10 +639,12 @@ if check_password():
                     st.rerun()
 
     # --- 💸 [6] ወጪ መመዝገቢያ ---
+    # --- 💸 [6] ወጪ መመዝገቢያ ---
     elif choice == "💸 [6] ወጪ መመዝገቢያ":
         st.header("💸 የወጪ እና የዱቄት ፍጆታ መቆጣጠሪያ")
         st.write("---")
         
+        # ሰራተኛው መጀመሪያ የሚመርጥባቸው ሁለት ቼክ ቦክሶች
         st.subheader("🛠 ምን መመዝገብ ይፈልጋሉ? (ከታች ይምረጡ)")
         col_chk1, col_chk2 = st.columns(2)
         with col_chk1:
@@ -659,49 +654,78 @@ if check_password():
             
         st.write("---")
         
+        # ገጹን ለሁለት ከፍለን ጎን ለጎን እናሳየዋለን
         col_left, col_right = st.columns(2)
         
+        # --- 🔹 [1] የመደበኛ ወጪዎች ክፍል (ብር ያለበት) ---
         with col_left:
             if show_normal:
                 st.subheader("📝 መደበኛ ወጪ መመዝገብ")
                 with st.form("normal_expense_form", clear_on_submit=True):
                     item = st.text_input("የየዕቃው ስም / የወጣበት ምክንያት (ምሳሌ፡ የላስቲክ፣ መብራት...)").strip()
-                    amount = st.number_input("የወጣው ብር መጠን", min_value=0.0, step=1.0)
-                    submit_normal = st.form_submit_button("✅ ወጪ መዝግብ")
+                    amount = st.number_input("የወጣው ብር መጠን", min_value=0.0, step=10.0)
+                    submit_normal = st.form_submit_button("📥 መደበኛ ወጪ መዝግብ")
+                    
                     if submit_normal and item and amount > 0:
                         add_expense(item, amount)
-                        st.success(f"✅ ወጪ {item} - {amount} ብር ተመዝግቧል!")
+                        st.success("✅ መደበኛ ወጪ ተመዝግቧል!")
                         st.rerun()
+                
+                st.write("---")
+                st.subheader("📜 የመደበኛ ወጪዎች ዝርዝር")
+                if expenses_data.get("list"):
+                    normal_exps = [e for e in expenses_data["list"] if "🌾 ዱቄት" not in str(e.get('item',''))]
+                    if normal_exps:
+                        for exp in normal_exps:
+                            c_text, c_btn = st.columns([3, 1])
+                            with c_text: 
+                                st.write(f"🏷 {exp.get('item','')} | 💰 **{exp.get('amount',0)} ብር**")
+                                st.caption(f"📅 {exp.get('date','')}")
+                            with c_btn:
+                                if st.button("🗑 አጥፋ", key=f"del_exp_{exp.get('id')}"):
+                                    delete_expense(exp.get('id'))
+                                    st.warning("⚠️ መዝገቡ ተሰርዟል!")
+                                    st.rerun()
+                            st.write("---")
+                    else:
+                        st.info("ምንም መደበኛ የወጪ መዝገብ የለም።")
+                else: 
+                    st.info("ምንም የወጪ መዝገብ የለም።")
 
-    # --- 🗑 ሪሳይክል ቢን (Recycle Bin) አዲስ ገጽ ---
-    elif choice == "🗑 ሪሳይክል ቢን (Recycle Bin)":
-        st.header("🗑 ሪሳይክል ቢን ማዕከል")
-        st.write("እዚህ ገጽ ላይ በስህተት የጠፉ የሰራተኛ ሪፖርቶችን አይተው ወደነበሩበት መመለስ ይችላሉ።")
-        st.write("---")
-        
-        recycle_items = load_recycle_bin()
-        
-        if not recycle_items:
-            st.success("🎉 ሪሳይክል ቢኑ ባዶ ነው! የጠፋ ፋይል የለም።")
-        else:
-            for r_id, rec_data in list(recycle_items.items()):
-                box_title = f"📄 የጠፋ ሪፖርት፦ {rec_data.get('staff_name')} ({rec_data.get('date')})"
-                with st.expander(box_title):
-                    st.write(f"**ሰራተኛ፦** {rec_data.get('staff_name')}")
-                    st.write(f"**የወሰደው ዳቦ፦** {rec_data.get('morning_load')} | **የመለሰው፦** {rec_data.get('returned')}")
-                    st.write(f"**የተጠበቀው ብር፦** {rec_data.get('expected_birr')} | **ያመጣው ብር፦** {rec_data.get('actual_birr')}")
+        # --- 🌾 [2] የዱቄት ፍጆታ ክፍል (የጆንያ ብዛት ብቻ) ---
+        with col_right:
+            if show_duket:
+                st.subheader("🌾 የዛሬ የዱቄት ፍጆታ መመዝገብ")
+                with st.form("duket_consumption_form", clear_on_submit=True):
+                    # የብር ዋጋው ሙሉ በሙሉ ጠፍቶ የጆንያ ብዛት ብቻ ነው የሚጠይቀው
+                    duket_count = st.number_input("የወጣው የዱቄት ብዛት (በጆንያ)", min_value=1, step=1)
+                    submit_duket = st.form_submit_button("🌾 የዱቄት ብዛት መዝግብ")
                     
-                    c_restore, c_force_del = st.columns([2, 2])
-                    with c_restore:
-                        if st.button("🔄 ወደ ነበረበት መልስ (Restore)", key=f"rest_{r_id}"):
-                            # 1. ወደ ዋናው የደመና (Supabase) ዳታቤዝ መመለስ
-                            save_staff_record_single(r_id, rec_data)
-                            # 2. ከሪሳይክል ቢን ማህደር ላይ ማጥፋት
-                            remove_from_recycle_bin(r_id)
-                            st.success("✅ ሪፖርቱ በተሳካ ሁኔታ ወደ ዋናው ሪፖርት ተመልሷል!")
-                            st.rerun()
-                    with c_force_del:
-                        if st.button("❌ ናሙናውን ለግዜው አስወግድ", key=f"force_{r_id}"):
-                            remove_from_recycle_bin(r_id)
-                            st.info("ሪፖርቱ ከሪሳይክል ቢኑ ላይ ተወግዷል።")
-                            st.rerun()
+                    if submit_duket and duket_count > 0:
+                        duket_label = f"🌾 ዱቄት ({duket_count} ጆንያ) ወጥቷል"
+                        # በብር ቦታ ላይ 0.0 ቁጭ ይላል (ከገንዘብ ሂሳብ ጋር እንዳይደባለቅ)
+                        add_expense(duket_label, 0.0)
+                        st.success(f"✅ የ {duket_count} ጆንያ ዱቄት ፍጆታ በተሳካ ሁኔታ ተመዝግቧል!")
+                        st.rerun()
+                
+                st.write("---")
+                st.subheader("📜 የወጡ የዱቄት ጆንያዎች ታሪክ")
+                if expenses_data.get("list"):
+                    duket_exps = [e for e in expenses_data["list"] if "🌾 ዱቄት" in str(e.get('item',''))]
+                    if duket_exps:
+                        for exp in duket_exps:
+                            c_text, c_btn = st.columns([3, 1])
+                            with c_text: 
+                                # እዚህ ጋር የጆንያውን ብዛት እና ቀኑን ብቻ ያሳያል
+                                st.write(f"📦 **{exp.get('item','')}**")
+                                st.caption(f"📅 {exp.get('date','')}")
+                            with c_btn:
+                                if st.button("🗑 አጥፋ", key=f"del_duket_{exp.get('id')}"):
+                                    delete_expense(exp.get('id'))
+                                    st.warning("⚠️ የዱቄት መዝገብ ተሰርዟል!")
+                                    st.rerun()
+                            st.write("---")
+                    else:
+                        st.info("ምንም የተመዘገበ የዱቄት ፍጆታ የለም።")
+                else:
+                    st.info("ምንም የመዝገብ ታሪክ የለም።")
