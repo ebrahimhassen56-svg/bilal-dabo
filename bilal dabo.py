@@ -377,93 +377,96 @@ if check_password():
         st.header("📊 የክትትልና የሪፖርት ማዕከል")
         st.write("---")
         
-        # --- 📅 [ክፍል 1]፡ የሙሉ ዳቦ ቤቱ የቀን/የሳምንት/የወር ጠቅላላ ማጠቃለያ ሂሳብ ---
-        st.subheader("📅 የአጠቃላይ የቢዝነሱ የዘመን ክልል ማጠቃለያ (የቀን፣ የሳምንት፣ የወር ድምር)")
+        # 🛠 ቼክቦክስ - ማጠቃለያውን ለማሳየት/ለመደበቅ
+        show_summary = st.checkbox("📊 የአጠቃላይ ቢዝነስ ማጠቃለያ ለማየት እዚህ ጋ ያብሩ", value=False)
         
-        col_d1, col_d2 = st.columns(2)
-        with col_d1:
-            start_date = st.date_input("ከቀን", value=datetime.now())
-        with col_d2:
-            end_date = st.date_input("እስከ ቀን", value=datetime.now())
+        # --- 📅 [ክፍል 1]፡ የሙሉ ዳቦ ቤቱ የቀን/የሳምንት/የወር ጠቅላላ ማጠቃለያ ሂሳብ (በቼክቦክስ የሚመራ) ---
+        if show_summary:
+            st.subheader("📅 የአጠቃላይ የቢዝነሱ የዘመን ክልል ማጠቃለያ (የቀን፣ የሳምንት፣ የወር ድምር)")
             
-        if start_date <= end_date:
-            s_str = start_date.strftime("%Y-%m-%d")
-            e_str = end_date.strftime("%Y-%m-%d")
-            
-            # ለጠቅላላ ቢዝነሱ ድምር ተለዋዋጮች
-            total_business_cash_dabo = 0
-            total_business_cash_birr = 0
-            total_business_new_dube_dabo = 0
-            
-            total_business_coll_dabo = 0
-            total_business_coll_birr = 0
-            
-            total_business_expected_birr = 0
-            total_business_actual_birr = 0
-            
-            total_business_expenses = 0
-            total_business_duket_bags = 0
-            
-            # 1. ከሁሉም ሰራተኞች ታሪክ ላይ መረጃዎችን በአንድ ላይ መደመር
-            for r in staff_history.values():
-                r_date_str = r.get('date', '')[:10]
-                if s_str <= r_date_str <= e_str:
-                    total_business_cash_dabo += r.get('cash_sold_dabo', 0)
-                    total_business_cash_birr += r.get('cash_sold_birr', 0)
-                    total_business_new_dube_dabo += r.get('new_dube_dabo', 0)
-                    
-                    total_business_coll_dabo += r.get('coll_dabo', 0)
-                    total_business_coll_birr += r.get('coll_birr', 0)
-                    
-                    total_business_expected_birr += r.get('expected_birr', 0)
-                    total_business_actual_birr += r.get('actual_birr', 0)
-            
-            # 2. ከወጪ መዝገብ ላይ ወጪና ዱቄት መደመር
-            if expenses_data.get("list"):
-                for exp in expenses_data["list"]:
-                    exp_date_str = exp.get('date', '')[:10]
-                    if s_str <= exp_date_str <= e_str:
-                        item_name = str(exp.get('item', ''))
-                        if "🌾 ዱቄት" in item_name:
-                            try:
-                                parts = item_name.split('(')
-                                if len(parts) > 1:
-                                    num_bags = int(parts[1].split(' ')[0])
-                                    total_business_duket_bags += num_bags
-                            except:
-                                pass
-                        else:
-                            total_business_expenses += float(exp.get('amount', 0))
-            
-            # 🛠 [አዲስ ስሌት]፡ ካሽ ዳቦ + ከዱቤ የተሰበሰበ ዳቦ (በአንድ ላይ የተደመረ)
-            total_collected_dabo_combined = total_business_cash_dabo + total_business_coll_dabo
-            
-            st.markdown(f"##### 🏢 ከ **{s_str}** እስከ **{e_str}** የዳቦ ቤቱ አጠቃላይ የተደመረ ሂሳብ፦")
-            
-            # የመጀመሪያው ረድፍ ካርዶች
-            c1, c2, c3 = st.columns(3)
-            # 👈 እዚህ ጋር ሁለቱ በአንድ ላይ ተደምረው ዋና ካርድ ሆኑ
-            c1.metric("🥖 ጠቅላላ የመጣ ዳቦ (ካሽ + የድሮ ዱቤ)", f"{total_collected_dabo_combined} ዳቦ", f"ካሽ፡ {total_business_cash_dabo} | ከድሮ ዱቤ የተመለሰ፦ {total_business_coll_dabo}")
-            c2.metric("💰 ማስገባት የነበረባቸው ብር (Expected)", f"{total_business_expected_birr} ብር")
-            c3.metric("💵 በትክክል ያመጡት ብር (Actual)", f"{total_business_actual_birr} ብር")
-            
-            st.write("---")
-            # ሁለተኛው ረድፍ ካርዶች
-            c4, c5, c6 = st.columns(3)
-            c4.metric("📈 አዲስ ለደንበኞች የተሰጠ ዱቤ", f"{total_business_new_dube_dabo} ዳቦ")
-            c5.metric("💸 የወጣ ጠቅላላ መደበኛ ወጪ", f"{total_business_expenses} ብር")
-            c6.metric("🌾 የወጣ ጠቅላላ ዱቄት", f"{total_business_duket_bags} ጆንያ")
-            
-            # የትርፍና ኪሳራ ልዩነት ማሳያ
-            total_diff = total_business_actual_birr - total_business_expected_birr
-            if total_diff >= 0:
-                st.success(f"📈 አጠቃላይ የገንዘብ ልዩነት (ትርፍ)፦ +{total_diff} ብር")
+            col_d1, col_d2 = st.columns(2)
+            with col_d1:
+                start_date = st.date_input("ከቀን", value=datetime.now())
+            with col_d2:
+                end_date = st.date_input("እስከ ቀን", value=datetime.now())
+                
+            if start_date <= end_date:
+                s_str = start_date.strftime("%Y-%m-%d")
+                e_str = end_date.strftime("%Y-%m-%d")
+                
+                # ለጠቅላላ ቢዝነሱ ድምር ተለዋዋጮች
+                total_business_cash_dabo = 0
+                total_business_cash_birr = 0
+                total_business_new_dube_dabo = 0
+                
+                total_business_coll_dabo = 0
+                total_business_coll_birr = 0
+                
+                total_business_expected_birr = 0
+                total_business_actual_birr = 0
+                
+                total_business_expenses = 0
+                total_business_duket_bags = 0
+                
+                # 1. ከሁሉም ሰራተኞች ታሪክ ላይ መረጃዎችን በአንድ ላይ መደመር
+                for r in staff_history.values():
+                    r_date_str = r.get('date', '')[:10]
+                    if s_str <= r_date_str <= e_str:
+                        total_business_cash_dabo += r.get('cash_sold_dabo', 0)
+                        total_business_cash_birr += r.get('cash_sold_birr', 0)
+                        total_business_new_dube_dabo += r.get('new_dube_dabo', 0)
+                        
+                        total_business_coll_dabo += r.get('coll_dabo', 0)
+                        total_business_coll_birr += r.get('coll_birr', 0)
+                        
+                        total_business_expected_birr += r.get('expected_birr', 0)
+                        total_business_actual_birr += r.get('actual_birr', 0)
+                
+                # 2. ከወጪ መዝገብ ላይ ወጪና ዱቄት መደመር
+                if expenses_data.get("list"):
+                    for exp in expenses_data["list"]:
+                        exp_date_str = exp.get('date', '')[:10]
+                        if s_str <= exp_date_str <= e_str:
+                            item_name = str(exp.get('item', ''))
+                            if "🌾 ዱቄት" in item_name:
+                                try:
+                                    parts = item_name.split('(')
+                                    if len(parts) > 1:
+                                        num_bags = int(parts[1].split(' ')[0])
+                                        total_business_duket_bags += num_bags
+                                except:
+                                    pass
+                            else:
+                                total_business_expenses += float(exp.get('amount', 0))
+                
+                # ካሽ ዳቦ + ከዱቤ የተሰበሰበ ዳቦ (በአንድ ላይ የተደመረ)
+                total_collected_dabo_combined = total_business_cash_dabo + total_business_coll_dabo
+                
+                st.markdown(f"##### 🏢 ከ **{s_str}** እስከ **{e_str}** የዳቦ ቤቱ አጠቃላይ የተደመረ ሂሳብ፦")
+                
+                # የመጀመሪያው ረድፍ ካርዶች
+                c1, c2, c3 = st.columns(3)
+                c1.metric("🥖 ጠቅላላ የመጣ ዳቦ (ካሽ + የድሮ ዱቤ)", f"{total_collected_dabo_combined} ዳቦ", f"ካሽ፡ {total_business_cash_dabo} | ከድሮ ዱቤ የተመለሰ፦ {total_business_coll_dabo}")
+                c2.metric("💰 ማስገባት የነበረባቸው ብር (Expected)", f"{total_business_expected_birr} ብር")
+                c3.metric("💵 በትክክል ያመጡት ብር (Actual)", f"{total_business_actual_birr} ብር")
+                
+                st.write("---")
+                # ሁለተኛው ረድፍ ካርዶች
+                c4, c5, c6 = st.columns(3)
+                c4.metric("📈 አዲስ ለደንበኞች የተሰጠ ዱቤ", f"{total_business_new_dube_dabo} ዳቦ")
+                c5.metric("💸 የወጣ ጠቅላላ መደበኛ ወጪ", f"{total_business_expenses} ብር")
+                c6.metric("🌾 የወጣ ጠቅላላ ዱቄት", f"{total_business_duket_bags} ጆንያ")
+                
+                # የትርፍና ኪሳራ ልዩነት ማሳያ
+                total_diff = total_business_actual_birr - total_business_expected_birr
+                if total_diff >= 0:
+                    st.success(f"📈 አጠቃላይ የገንዘብ ልዩነት (ትርፍ)፦ +{total_diff} ብር")
+                else:
+                    st.error(f"📉 አጠቃላይ የገንዘብ ጉድለት (ኪሳራ)፦ {total_diff} ብር")
+                
             else:
-                st.error(f"📉 አጠቃላይ የገንዘብ ጉድለት (ኪሳራ)፦ {total_diff} ብር")
-            
-        else:
-            st.error("❌ ስህተት፡ የ 'ከቀን' መጀመሪያ ከ 'እስከ ቀን' ማነስ አለበት!")
-            
+                st.error("❌ ስህተት፡ የ 'ከቀን' መጀመሪያ ከ 'እስከ ቀን' ማነስ አለበት!")
+                
         st.write("---")
         
         # --- 🔴 [ክፍል 2]፡ ዱቤ ያልከፈሉ ደንበኞች ስም ዝርዝር ---
@@ -482,7 +485,7 @@ if check_password():
         
         st.write("---")
         
-        # --- 📜 [ክፍል 3]፡ የሰራተኞች የዕለት ሪፖርት ዝርዝር (ልክ እንደ ዱሮው) ---
+        # --- 📜 [ክፍል 3]፡ የሰራተኞች የዕለት ሪፖርት ዝርዝር ---
         st.header("📜 የሰራተኞች የዕለት ሪፖርት ዝርዝር")
         all_s = sorted(list(set([r['staff_name'] for r in staff_history.values() if 'staff_name' in r])))
         
