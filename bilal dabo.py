@@ -558,9 +558,8 @@ if check_password():
         # --- [5] የሰራተኛ ስም ማስተካከያ ---
         if opt_main.startswith("[5]"):
             st.subheader("✏️ የሰራተኛ ስም ማሻሻያ ማዕከል")
-            st.caption("⚠️ የሰራተኛ ስም ሲቀይሩ የድሮ የዕለት ሪፖርቶች ታሪክ በሙሉ ወደ አዲሱ ስም ይዛወራል!")
+            st.caption("⚠️ የሰራተኛ ስም ሲቀይሩ የድሮ የዕለት ሪፖርቶች ታሪክ በሙሉ ወደ አዲሱ ስም ይዛወራል! ስሙ አስቀድሞ ካለ ከነበረው ጋር ይዋሃዳል።")
             
-            # በታሪክ ውስጥ ያሉ ሁሉንም ሰራተኞች ስም ለይቶ ማውጣት
             all_staffs = sorted(list(set([r['staff_name'] for r in staff_history.values() if 'staff_name' in r])))
             
             if not all_staffs:
@@ -573,7 +572,6 @@ if check_password():
                     if st.button("💾 የሰራተኛ ስም አሻሽል", key="execute_staff_rename_btn"):
                         if new_staff_name and new_staff_name != old_staff_name:
                             
-                            # የድሮ ሪፖርቶችን መፈለግ
                             matches = [(r_id, r) for r_id, r in staff_history.items() if r.get('staff_name') == old_staff_name]
                             
                             if matches:
@@ -581,18 +579,16 @@ if check_password():
                                     # 1. በሪፖርቱ ውስጥ ስሙን መቀየር
                                     r['staff_name'] = new_staff_name
                                     
-                                    # 2. አዲስ የሪፖርት ID ማዘጋጀት (የድሮውን ቀን ይዞ ስሙ ብቻ እንዲቀየር)
-                                    # የድሮው ID መዋቅር: "YYYY-MM-DD_HH-MM-SS_StaffName" ስለሆነ የመጀመሪያውን የጊዜ ክፍል እንወስዳለን
                                     time_part = old_id.split('_')[0] + "_" + old_id.split('_')[1] if len(old_id.split('_')) >= 2 else datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
                                     new_id = f"{time_part}_{new_staff_name}"
                                     
-                                    # 3. አዲሱን ID በዳታቤዝ መጫን
+                                    # 2. አዲሱን ID በዳታቤዝ መጫን (ቀድሞ ካለ በላዩ ላይ ይጨምረዋል/ያድሰዋል)
                                     save_staff_record_single(new_id, r)
                                     
-                                    # 4. የድሮውን ID ከዳታቤዝ ማጥፋት
+                                    # 3. የድሮውን ID ከዳታቤዝ ማጥፋት
                                     delete_staff_record(old_id)
                                     
-                                st.success(f"✅ የሰራተኛ ስም ከ '{old_staff_name}' ወደ '{new_staff_name}' በተሳካ ሁኔታ ተቀይሯል! የድሮ ታሪኩም ተዛውሯል።")
+                                st.success(f"✅ የሰራተኛ ስም ከ '{old_staff_name}' ወደ '{new_staff_name}' ተቀይሮ ከነባር መረጃዎች ጋር ተዋህዷል!")
                                 st.rerun()
                         else:
                             st.info("ምንም የተቀየረ ስም የለም ወይም ስሙ ባዶ ነው።")
@@ -600,7 +596,7 @@ if check_password():
         # --- [4] የደንበኛ ስም ማስተካከያ ---
         elif opt_main.startswith("[4]"):
             st.subheader("✏️ የደንበኛ ስም ማሻሻያ ማዕከል")
-            st.caption("⚠️ ስሙን ሲቀይሩ የድሮው የዱቤ ታሪክ (የቆየውም ሆነ የዛሬው) ሙሉ በሙሉ ወደ አዲሱ ስም ይዞራል!")
+            st.caption("⚠️ ስሙን ሲቀይሩ የድሮው የዱቤ ታሪክ በሙሉ ወደ አዲሱ ስም ይዞራል! ስሙ ቀድሞ ካለ ሂሳቡ አብሮ ይደመራል።")
             
             all_customers = list(dube_mezgebiya.keys())
             if not all_customers:
@@ -612,21 +608,35 @@ if check_password():
                     
                     if st.button("💾 የስም ማሻሻያ አውርድ", key="execute_rename_btn_opt4"):
                         if new_name and new_name != old_name:
+                            
+                            # የድሮውን ደንበኛ መረጃ ከዋናው መዝገብ ላይ ነቅሎ ማውጣት
+                            old_data = dube_mezgebiya.pop(old_name)
+                            
+                            # አዲሱ ስም ቀድሞ በዳታቤዝ ውስጥ ካለ ታሪካቸውን መደመር/መቀላቀል (Merge)
                             if new_name in dube_mezgebiya:
-                                st.error("⚠️ ይህ አዲስ ስም ቀድሞ በዳታቤዝ ውስጥ አለ! መደራረብ ስለሚፈጥር መቀየር አይቻልም።")
+                                dube_mezgebiya[new_name]['original'] = dube_mezgebiya[new_name].get('original', 0) + old_data.get('original', 0)
+                                dube_mezgebiya[new_name]['paid'] = dube_mezgebiya[new_name].get('paid', 0) + old_data.get('paid', 0)
+                                dube_mezgebiya[new_name]['yedere_dube'] = dube_mezgebiya[new_name].get('yedere_dube', 0) + old_data.get('yedere_dube', 0)
                             else:
-                                dube_mezgebiya[new_name] = dube_mezgebiya.pop(old_name)
-                                save_dube_record(dube_mezgebiya)
+                                # አዲሱ ስም ከሌለ በቀጥታ በአዲሱ ስም መመዝገብ
+                                dube_mezgebiya[new_name] = old_data
                                 
-                                for r_id, r in staff_history.items():
-                                    if "collected_names" in r and old_name in r["collected_names"]:
-                                        r["collected_names"][new_name] = r["collected_names"].pop(old_name)
-                                    if "today_dube_details" in r and old_name in r["today_dube_details"]:
-                                        r["today_dube_details"][new_name] = r["today_dube_details"].pop(old_name)
-                                    save_staff_record_single(r_id, r)
+                            save_dube_record(dube_mezgebiya)
+                            
+                            # 2. በሰራተኞች ታሪክ (staff_history) ውስጥ የድሮው ስም ካለ ወደ አዲሱ መቀየር/መደመር
+                            for r_id, r in staff_history.items():
+                                if "collected_names" in r and old_name in r["collected_names"]:
+                                    old_coll = r["collected_names"].pop(old_name)
+                                    r["collected_names"][new_name] = r["collected_names"].get(new_name, 0) + old_coll
                                     
-                                st.success(f"✅ የደንበኛ ስም ከ '{old_name}' ወደ '{new_name}' በተሳካ ሁኔታ ተቀይሯል!")
-                                st.rerun()
+                                if "today_dube_details" in r and old_name in r["today_dube_details"]:
+                                    old_today = r["today_dube_details"].pop(old_name)
+                                    r["today_dube_details"][new_name] = r["today_dube_details"].get(new_name, 0) + old_today
+                                    
+                                save_staff_record_single(r_id, r)
+                                
+                            st.success(f"✅ የደንበኛ ስም ከ '{old_name}' ወደ '{new_name}' ተቀይሮ ከነባር የዱቤ ሂሳብ ጋር ተዋህዷል!")
+                            st.rerun()
                         else:
                             st.info("ምንም የተቀየረ ስም የለም ወይም ስሙ ባዶ ነው።")
 
