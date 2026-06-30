@@ -572,24 +572,27 @@ if check_password():
                     if st.button("💾 የሰራተኛ ስም አሻሽል", key="execute_staff_rename_btn"):
                         if new_staff_name and new_staff_name != old_staff_name:
                             
-                            matches = [(r_id, r) for r_id, r in staff_history.items() if r.get('staff_name') == old_staff_name]
+                            # በሜሞሪ ውስጥ ያሉትን የድሮ ቁልፎች (IDs) ለይቶ መያዝ
+                            old_ids = [r_id for r_id, r in staff_history.items() if r.get('staff_name') == old_staff_name]
                             
-                            if matches:
-                                for old_id, r in matches:
-                                    r['staff_name'] = new_staff_name
-                                    time_part = old_id.split('_')[0] + "_" + old_id.split('_')[1] if len(old_id.split('_')) >= 2 else datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-                                    new_id = f"{time_part}_{new_staff_name}"
+                            for old_id in old_ids:
+                                r = staff_history.pop(old_id) # ከሜሞሪ ሙሉ በሙሉ መንቀል
+                                r['staff_name'] = new_staff_name
+                                
+                                # አዲስ መለያ ID መፍጠር
+                                time_part = old_id.split('_')[0] + "_" + old_id.split('_')[1] if len(old_id.split('_')) >= 2 else datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+                                new_id = f"{time_part}_{new_staff_name}"
+                                
+                                # 1. አዲሱን በፋይል ላይ መጻፍ
+                                save_staff_record_single(new_id, r)
+                                # 2. የድሮውን ከፋይል ላይ ማጥፋት
+                                delete_staff_record(old_id)
+                                
+                                # 3. አዲሱን በሜሞሪ ውስጥ መመዝገብ
+                                staff_history[new_id] = r
                                     
-                                    # 1. አዲሱን በፋይል ላይ መጻፍ
-                                    save_staff_record_single(new_id, r)
-                                    # 2. የድሮውን ከፋይል ላይ ማጥፋት
-                                    delete_staff_record(old_id)
-                                    
-                                    # 3. በሜሞሪ (Memory) ውስጥ ያለውን ታሪክ ማደስ (ይህ ነው ስሙ እንዳይመለስ የሚያደርገው)
-                                    staff_history[new_id] = staff_history.pop(old_id)
-                                    
-                                st.success(f"✅ የሰራተኛ ስም ከ '{old_staff_name}' ወደ '{new_staff_name}' ተቀይሮ ከነባር መረጃዎች ጋር ተዋህዷል!")
-                                st.rerun()
+                            st.success(f"✅ የሰራተኛ ስም ከ '{old_staff_name}' ወደ '{new_staff_name}' ተቀይሮ የድሮው ታሪክ ጠፍቷል!")
+                            st.rerun()
                         else:
                             st.info("ምንም የተቀየረ ስም የለም ወይም ስሙ ባዶ ነው።")
 
@@ -610,34 +613,35 @@ if check_password():
                         if new_name and new_name != old_name:
                             
                             # 1. በዋናው የዱቤ መዝገብ ላይ ስሙን መቀየር/መቀላቀል
-                            old_data = dube_mezgebiya.pop(old_name) 
+                            old_data = dube_mezgebiya.pop(old_name, None) 
                             
-                            if new_name in dube_mezgebiya:
-                                dube_mezgebiya[new_name]['original'] = dube_mezgebiya[new_name].get('original', 0) + old_data.get('original', 0)
-                                dube_mezgebiya[new_name]['paid'] = dube_mezgebiya[new_name].get('paid', 0) + old_data.get('paid', 0)
-                                dube_mezgebiya[new_name]['yedere_dube'] = dube_mezgebiya[new_name].get('yedere_dube', 0) + old_data.get('yedere_dube', 0)
-                            else:
-                                dube_mezgebiya[new_name] = old_data
-                                
-                            save_dube_record(dube_mezgebiya) 
+                            if old_data:
+                                if new_name in dube_mezgebiya:
+                                    dube_mezgebiya[new_name]['original'] = dube_mezgebiya[new_name].get('original', 0) + old_data.get('original', 0)
+                                    dube_mezgebiya[new_name]['paid'] = dube_mezgebiya[new_name].get('paid', 0) + old_data.get('paid', 0)
+                                    dube_mezgebiya[new_name]['yedere_dube'] = dube_mezgebiya[new_name].get('yedere_dube', 0) + old_data.get('yedere_dube', 0)
+                                else:
+                                    dube_mezgebiya[new_name] = old_data
+                                    
+                                save_dube_record(dube_mezgebiya) 
                             
-                            # 2. በየቀኑ የሰራተኞች ታሪክ ውስጥ የድሮውን ስም ፈንቅሎ ማጥፋት
+                            # 2. በየቀኑ የሰራተኞች ታሪክ (በፋይልም በሜሞሪም) ውስጥ የድሮውን ስም ፈንቅሎ ማጥፋት
                             for r_id, r in staff_history.items():
                                 record_changed = False
                                 
                                 # የከፈለው የድሮ ዱቤ ታሪክ ውስጥ ካለ
                                 if "collected_names" in r and old_name in r["collected_names"]:
-                                    old_coll = r["collected_names"].pop(old_name) 
+                                    old_coll = r["collected_names"].pop(old_name, 0) 
                                     r["collected_names"][new_name] = r["collected_names"].get(new_name, 0) + old_coll
                                     record_changed = True
                                     
                                 # የዛሬ አዲስ ዱቤ ታሪክ ውስጥ ካለ
                                 if "today_dube_details" in r and old_name in r["today_dube_details"]:
-                                    old_today = r["today_dube_details"].pop(old_name) 
+                                    old_today = r["today_dube_details"].pop(old_name, 0) 
                                     r["today_dube_details"][new_name] = r["today_dube_details"].get(new_name, 0) + old_today
                                     record_changed = True
                                 
-                                # ለውጡን በፋይል ላይ መጻፍ
+                                # ለውጡን በፋይል ላይ መልሶ መጻፍ
                                 if record_changed:
                                     save_staff_record_single(r_id, r)
                                 
