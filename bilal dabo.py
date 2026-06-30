@@ -730,7 +730,6 @@ if check_password():
                     save_staff_record_single(sel_id, sel_rec)
                     st.success("✅ ሂሳቡ በተሳካ ሁኔታ ተስተካክሏል!")
                     st.rerun()
-
     # --- 💸 [6] ወጪ መመዝገቢያ ---
     # --- 💸 [6] ወጪ መመዝገቢያ ---
     elif choice == "💸 [6] ወጪ መመዝገቢያ":
