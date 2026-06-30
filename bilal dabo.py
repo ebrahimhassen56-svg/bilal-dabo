@@ -259,8 +259,7 @@ if check_password():
         s_name = st.text_input("ተቀባይ ሰራተኛ ስም").strip().capitalize()
         custs = [n for n, d in dube_mezgebiya.items() if (d.get('yedere_dube', 0) + d['original'] - d['paid']) > 0]
         
-        if not custs: 
-            st.info("ምንም ዕዳ ያለበት ደንበኛ የለም።")
+        if not custs: st.info("ምንም ዕዳ ያለበት ደንበኛ የለም።")
         elif s_name:
             sel_name = st.selectbox("የደንበኛ ስም ይምረጡ", custs)
             d = dube_mezgebiya[sel_name]
@@ -271,55 +270,17 @@ if check_password():
             if st.button("✅ ክፍያ መዝግብ"):
                 dube_mezgebiya[sel_name]['paid'] += amt
                 rec_id = get_daily_id(s_name)
-                
-                # መዝገቡ አስቀድሞ ከሌለ በባዶ እሴቶች ማዘጋጀት
                 if rec_id not in staff_history:
-                    staff_history[rec_id] = {
-                        "staff_name": s_name, 
-                        "date": datetime.now().strftime("%Y-%m-%d %H:%M"), 
-                        "morning_load": 0, "returned": 0,
-                        "cash_sold_dabo": 0, "cash_sold_birr": 0,
-                        "new_dube_dabo": 0, "today_dube_details": {},
-                        "coll_dabo": 0, "coll_birr": 0, 
-                        "collected_names": {}, 
-                        "expected_birr": 0.0, "actual_birr": 0.0, "diff": 0.0
-                    }
+                    staff_history[rec_id] = {"staff_name": s_name, "date": datetime.now().strftime("%Y-%m-%d %H:%M"), "coll_dabo": 0, "coll_birr": 0, "collected_names": {}, "today_dube_details": {}}
                 
-                # አዲሱን የዱቤ ክፍያ መጠን መመዝገብ
                 staff_history[rec_id]["collected_names"][sel_name] = staff_history[rec_id]["collected_names"].get(sel_name, 0) + amt
-                
-                # ጠቅላላ የድሮ ዱቤ ስሌቶችን ማደስ
-                coll_dabo_sum = sum(staff_history[rec_id]["collected_names"].values())
-                coll_birr_sum = coll_dabo_sum * DABO_WAGA
-                
-                staff_history[rec_id]["coll_dabo"] = coll_dabo_sum
-                staff_history[rec_id]["coll_birr"] = coll_birr_sum
-                
-                # 🛠 ማስተካከያ፡ የተቀበልከው የዱቤ ብር በአጠቃላይ ማጠቃለያ ላይ እንዲታይ 'Expected' እና 'Actual' ላይ መደመር
-                cash_sold_birr = staff_history[rec_id].get("cash_sold_birr", 0)
-                
-                # ስራ ገና ያልተዘጋ ከሆነ (የቀኑ የመጀመሪያው ዱቤ መቀበያ ከሆነ) የቀድሞውን 'actual' ይዞ ለመቀጠል
-                current_actual = staff_history[rec_id].get("actual_birr", 0)
-                
-                # አዲሱን ድምር ማስላት (የካሽ ሽያጭ ብር + አጠቃላይ የዱቤ ስብስብ ብር)
-                new_expected = cash_sold_birr + coll_birr_sum
-                
-                # ሰራተኛው ስራ ሲዘጋ ያስረከበው ብር ከሌለ፣ የተቀበለውን የዱቤ ብር እንደ መነሻ actual አድርጎ መውሰድ
-                if current_actual == 0:
-                    new_actual = coll_birr_sum
-                else:
-                    new_actual = current_actual + (amt * DABO_WAGA)
-                
-                staff_history[rec_id]["expected_birr"] = new_expected
-                staff_history[rec_id]["actual_birr"] = new_actual
-                staff_history[rec_id]["diff"] = new_actual - new_expected
-                
-                # በዳታቤዝ ላይ ሴቭ ማድረግ
+                staff_history[rec_id]["coll_dabo"] = sum(staff_history[rec_id]["collected_names"].values())
+                staff_history[rec_id]["coll_birr"] = staff_history[rec_id]["coll_dabo"] * DABO_WAGA
                 save_dube_record(dube_mezgebiya)
                 save_staff_record_single(rec_id, staff_history[rec_id])
-                
-                st.success(f"✅ ከ {sel_name} {amt} ዳቦ ({amt * DABO_WAGA} ብር) ተቀብሎ በአጠቃላይ ማጠቃለያ ላይ ተደምሯል!")
+                st.success(f"✅ ከ {sel_name} ተቀብሏል!")
                 st.rerun()
+
 
     # --- 📊 [3] ስራ መዝጊያ ---
     # --- 📊 [3] ስራ መዝጊያ ---
