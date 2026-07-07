@@ -5,10 +5,37 @@ import datetime
 import requests
 
 def get_ethiopian_datetime():
-    # የሰርቨሩን ሰዓት ወደ ትክክለኛው የኢትዮጵያ ሰዓት ለመቀየር 3 ሰዓት መደመር
-    የአሁኑ_ሰዓት = datetime.datetime.now() + datetime.timedelta(hours=3)
-    # ሙሉ በሙሉ በቁጥር ብቻ የዓመት-ወር-ቀን ሰዓት:ደቂቃ (ምሳሌ፡ 2026-07-07 10:16)
-    return የአሁኑ_ሰዓት.strftime("%Y-%m-%d %H:%M")
+    # 1. የሰዓት ልዩነት ማስተካከያ (የኢትዮጵያ ሰዓት ከሰርቨር በ3 ሰዓት ይቀድማል)
+    now = datetime.datetime.now() + datetime.timedelta(hours=3)
+    
+    g_year = now.year
+    g_month = now.month
+    g_day = now.day
+    
+    # 2. የፈረንጆችን ቀን (Gregorian) ወደ ትክክለኛ የኢትዮጵያ ቀን በቁጥር የመቀየሪያ ቀመር (JDN Algorithm)
+    a = (14 - g_month) // 12
+    y = g_year + 4800 - a
+    m = g_month + 12 * a - 3
+    jdn = g_day + (153 * m + 2) // 5 + 365 * y + y // 4 - y // 100 + y // 400 - 32045
+    
+    r = (jdn - 1723856) % 1461
+    n = r % 365 + 365 * (r // 1460)
+    
+    eth_year = (jdn - 1723856) // 1461 * 4 + r // 1460
+    eth_month = n // 30 + 1
+    eth_day = n % 30 + 1
+    
+    if eth_day == 0:
+        eth_day = 30
+        eth_month -= 1
+    if eth_month == 14:
+        eth_month = 13
+        
+    # 3. ሰዓቱን በ24 ሰዓት ፎርማት ማዘጋጀት
+    time_str = now.strftime("%H:%M")
+    
+    # ሙሉ በሙሉ በቁጥር የኢትዮጵያ ዓመት-ወር-ቀን ሰዓት (ምሳሌ፡ 2018-10-30 10:16)
+    return f"{eth_year}-{eth_month:02d}-{eth_day:02d} {time_str}"
 DABO_WAGA = 9
 
 # --- 🌐 SUPABASE CLOUD DATABASE CONFIG ---
@@ -121,9 +148,10 @@ dube_mezgebiya = load_dube_record()
 staff_history = load_staff_history()
 expenses_data = load_expenses()
 
-def get_daily_id(s_name):
-    የአሁኑ_ሰዓት = datetime.datetime.now() + datetime.timedelta(hours=3)
-    return f"{የአሁኑ_ሰዓት.strftime('%Y-%m-%d_%H-%M-%S')}_{s_name}"
+ddef get_daily_id(s_name):
+    # የአሁኑን የኢትዮጵያ ቀን በ ID ውስጥ መጠቀም
+    eth_now = get_ethiopian_datetime().replace(" ", "_").replace(":", "-")
+    return f"{eth_now}_{s_name}"
 
 # --- 🔒 የመግቢያ ሲስተም ---
 def check_password():
