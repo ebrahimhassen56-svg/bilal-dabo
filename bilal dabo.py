@@ -148,7 +148,7 @@ dube_mezgebiya = load_dube_record()
 staff_history = load_staff_history()
 expenses_data = load_expenses()
 
-ddef get_daily_id(s_name):
+def get_daily_id(s_name):
     # የአሁኑን የኢትዮጵያ ቀን በ ID ውስጥ መጠቀም
     eth_now = get_ethiopian_datetime().replace(" ", "_").replace(":", "-")
     return f"{eth_now}_{s_name}"
