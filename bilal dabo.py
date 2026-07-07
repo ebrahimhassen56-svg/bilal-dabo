@@ -3,7 +3,68 @@ import pandas as pd
 import json
 from datetime import datetime
 import requests
-
+def get_ethiopian_datetime():
+    import datetime
+    
+    # 1. የሰዓት አቆጣጠር ማስተካከያ (የኢትዮጵያ 1 ሰዓት = የፈረንጆች 7 ሰዓት)
+    now = datetime.datetime.now()
+    g_hour = now.hour
+    minute = now.minute
+    
+    # ሰዓቱን ወደ ኢትዮጵያ አቆጣጠር መለወጥ
+    if g_hour >= 6:
+        eth_hour = g_hour - 6
+    else:
+        eth_hour = g_hour + 18
+        
+    # የሰዓት ክፍለ ጊዜ መለየት
+    if 0 <= eth_hour < 6:
+        ampm = "ጠዋት"
+    elif 6 <= eth_hour < 11:
+        ampm = "ከሰዓት"
+    elif 11 <= eth_hour < 18:
+        ampm = "ማታ/ምሽት"
+    else:
+        ampm = "ሌሊት"
+        
+    # የ 12 ሰዓት ፎርማት ማስተካከያ
+    if eth_hour > 12:
+        eth_hour = eth_hour - 12
+    elif eth_hour == 0:
+        eth_hour = 12
+        
+    time_str = f"{ampm} {eth_hour}:{minute:02d}"
+    
+    # 2. የቀን አቆጣጠር ማስተካከያ (ግሪጎሪያንን ወደ ኢትዮጵያ ካላንደር መቀየር)
+    g_date = now.date()
+    # የጁሊያን ቀን ቁጥር ማስላት (ቀላሉ የቀን መቀየሪያ ቀመር)
+    a = (14 - g_date.month) // 12
+    y = g_date.year + 4800 - a
+    m = g_date.month + 12 * a - 3
+    jdn = g_date.day + (153 * m + 2) // 5 + 365 * y + y // 4 - y // 100 + y // 400 - 32045
+    
+    # ከጁሊያን ቀን ቁጥር ወደ ኢትዮጵያ ካላንደር መመለስ
+    r = (jdn - 1723856) % 1461
+    n = r % 365 + 365 * (r // 1460)
+    
+    eth_year = (jdn - 1723856) // 1461 * 4 + r // 1460
+    eth_month = n // 30 + 1
+    eth_day = n % 30 + 1
+    
+    if eth_day == 0:
+        eth_day = 30
+        eth_month -= 1
+    if eth_month == 14:
+        eth_month = 13
+    
+    eth_months = [
+        "መስከረም", "ጥቅምት", "ህዳር", "ታህሳስ", "ጥር", "የካቲት", 
+        "መጋቢት", "ሚያዝያ", "ግንቦት", "ሰኔ", "ሐምሌ", "ነሐሴ", "ጳጉሜ"
+    ]
+    
+    month_name = eth_months[eth_month - 1]
+    
+    return f"{month_name} {eth_day}፣ {eth_year} ዓ/ም ({time_str})"
 DABO_WAGA = 9
 
 # --- 🌐 SUPABASE CLOUD DATABASE CONFIG ---
@@ -271,7 +332,7 @@ if check_password():
                 dube_mezgebiya[sel_name]['paid'] += amt
                 rec_id = get_daily_id(s_name)
                 if rec_id not in staff_history:
-                    staff_history[rec_id] = {"staff_name": s_name, "date": datetime.now().strftime("%Y-%m-%d %H:%M"), "coll_dabo": 0, "coll_birr": 0, "collected_names": {}, "today_dube_details": {}}
+                    staff_history[rec_id] = {"staff_name": s_name, "date": get_ethiopian_datetime(), "coll_dabo": 0, "coll_birr": 0, "collected_names": {}, "today_dube_details": {}}
                 
                 staff_history[rec_id]["collected_names"][sel_name] = staff_history[rec_id]["collected_names"].get(sel_name, 0) + amt
                 staff_history[rec_id]["coll_dabo"] = sum(staff_history[rec_id]["collected_names"].values())
@@ -334,7 +395,7 @@ if check_password():
             if st.button("💾 የዕለት ሒሳብ ዝጋ"):
                 rec_id = get_daily_id(s_name)
                 if rec_id not in staff_history:
-                    staff_history[rec_id] = {"staff_name": s_name, "date": datetime.now().strftime("%Y-%m-%d %H:%M"), "coll_dabo": 0, "coll_birr": 0, "collected_names": {}, "today_dube_details": {}}
+                    staff_history[rec_id] = {"staff_name": s_name, "date": get_ethiopian_datetime(), "coll_dabo": 0, "coll_birr": 0, "collected_names": {}, "today_dube_details": {}}
                     
                 for d_n, d_a in recorded_today_dube.items():
                     if d_n in dube_mezgebiya: dube_mezgebiya[d_n]['original'] += d_a
