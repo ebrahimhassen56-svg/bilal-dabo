@@ -6,65 +6,13 @@ import requests
 def get_ethiopian_datetime():
     import datetime
     
-    # 1. የሰዓት አቆጣጠር ማስተካከያ (የኢትዮጵያ 1 ሰዓት = የፈረንጆች 7 ሰዓት)
-    now = datetime.datetime.now()
-    g_hour = now.hour
-    minute = now.minute
+    def get_ethiopian_datetime():
+    import datetime
+    # የሰርቨሩን ሰዓት በኢትዮጵያ ሰዓት ለመተካት የ 3 ሰዓት ልዩነት መደመር
+    የአሁኑ_ሰዓት = datetime.datetime.now() + datetime.timedelta(hours=3)
     
-    # ሰዓቱን ወደ ኢትዮጵያ አቆጣጠር መለወጥ
-    if g_hour >= 6:
-        eth_hour = g_hour - 6
-    else:
-        eth_hour = g_hour + 18
-        
-    # የሰዓት ክፍለ ጊዜ መለየት
-    if 0 <= eth_hour < 6:
-        ampm = "ጠዋት"
-    elif 6 <= eth_hour < 11:
-        ampm = "ከሰዓት"
-    elif 11 <= eth_hour < 18:
-        ampm = "ማታ/ምሽት"
-    else:
-        ampm = "ሌሊት"
-        
-    # የ 12 ሰዓት ፎርማት ማስተካከያ
-    if eth_hour > 12:
-        eth_hour = eth_hour - 12
-    elif eth_hour == 0:
-        eth_hour = 12
-        
-    time_str = f"{ampm} {eth_hour}:{minute:02d}"
-    
-    # 2. የቀን አቆጣጠር ማስተካከያ (ግሪጎሪያንን ወደ ኢትዮጵያ ካላንደር መቀየር)
-    g_date = now.date()
-    # የጁሊያን ቀን ቁጥር ማስላት (ቀላሉ የቀን መቀየሪያ ቀመር)
-    a = (14 - g_date.month) // 12
-    y = g_date.year + 4800 - a
-    m = g_date.month + 12 * a - 3
-    jdn = g_date.day + (153 * m + 2) // 5 + 365 * y + y // 4 - y // 100 + y // 400 - 32045
-    
-    # ከጁሊያን ቀን ቁጥር ወደ ኢትዮጵያ ካላንደር መመለስ
-    r = (jdn - 1723856) % 1461
-    n = r % 365 + 365 * (r // 1460)
-    
-    eth_year = (jdn - 1723856) // 1461 * 4 + r // 1460
-    eth_month = n // 30 + 1
-    eth_day = n % 30 + 1
-    
-    if eth_day == 0:
-        eth_day = 30
-        eth_month -= 1
-    if eth_month == 14:
-        eth_month = 13
-    
-    eth_months = [
-        "መስከረም", "ጥቅምት", "ህዳር", "ታህሳስ", "ጥር", "የካቲት", 
-        "መጋቢት", "ሚያዝያ", "ግንቦት", "ሰኔ", "ሐምሌ", "ነሐሴ", "ጳጉሜ"
-    ]
-    
-    month_name = eth_months[eth_month - 1]
-    
-    return f"{month_name} {eth_day}፣ {eth_year} ዓ/ም ({time_str})"
+    # ሙሉ በሙሉ በቁጥር ብቻ የዓመት-ወር-ቀን ሰዓት:ደቂቃ ፎርማት (ምሳሌ፡ 2026-07-07 10:16)
+    return የአሁኑ_ሰዓት.strftime("%Y-%m-%d %H:%M")
 DABO_WAGA = 9
 
 # --- 🌐 SUPABASE CLOUD DATABASE CONFIG ---
