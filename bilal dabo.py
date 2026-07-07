@@ -5,36 +5,71 @@ import datetime
 import requests
 
 def get_ethiopian_datetime():
-    # 1. የሰዓት ልዩነት ማስተካከያ (የኢትዮጵያ ሰዓት ከሰርቨር በ3 ሰዓት ይቀድማል)
+    import datetime
+    
+    # የሰርቨሩን ሰዓት ወደ ኢትዮጵያ ሰዓት ማስተካከል (3 ሰዓት መደመር)
     now = datetime.datetime.now() + datetime.timedelta(hours=3)
     
     g_year = now.year
     g_month = now.month
     g_day = now.day
     
-    # 2. የፈረንጆችን ቀን (Gregorian) ወደ ትክክለኛ የኢትዮጵያ ቀን በቁጥር የመቀየሪያ ቀመር (JDN Algorithm)
-    a = (14 - g_month) // 12
-    y = g_year + 4800 - a
-    m = g_month + 12 * a - 3
-    jdn = g_day + (153 * m + 2) // 5 + 365 * y + y // 4 - y // 100 + y // 400 - 32045
-    
-    r = (jdn - 1723856) % 1461
-    n = r % 365 + 365 * (r // 1460)
-    
-    eth_year = (jdn - 1723856) // 1461 * 4 + r // 1460
-    eth_month = n // 30 + 1
-    eth_day = n % 30 + 1
-    
-    if eth_day == 0:
-        eth_day = 30
-        eth_month -= 1
-    if eth_month == 14:
-        eth_month = 13
-        
-    # 3. ሰዓቱን በ24 ሰዓት ፎርማት ማዘጋጀት
+    # 🇪🇹 የፈረንጆችን ቀን ወደ ትክክለኛ የኢትዮጵያ ቀን በቁጥር የመቀየሪያ ቀመር
+    if g_month > 9 or (g_month == 9 and g_day >= 11):
+        eth_year = g_year - 7
+    else:
+        eth_year = g_year - 8
+
+    # የወራት መግቢያ ቀናትን ማጣቀሻ (ለ 2018 ዓ/ም የዘመን መለወጫ መነሻ)
+    # ከጃንዋሪ እስከ ዲሴምበር ያሉትን ቀናት ወደ ኢትዮጵያ ወር እና ቀን መለወጫ
+    if g_month == 1: # ጃንዋሪ
+        eth_month = 5 if g_day <= 8 else 6
+        eth_day = g_day + 22 if g_day <= 8 else g_day - 8
+    elif g_month == 2: # ፌብሩዋሪ
+        eth_month = 6 if g_day <= 7 else 7
+        eth_day = g_day + 22 if g_day <= 7 else g_day - 7
+    elif g_month == 3: # ማርች
+        eth_month = 7 if g_day <= 9 else 8
+        eth_day = g_day + 21 if g_day <= 9 else g_day - 9
+    elif g_month == 4: # ኤፕሪል
+        eth_month = 8 if g_day <= 8 else 9
+        eth_day = g_day + 22 if g_day <= 8 else g_day - 8
+    elif g_month == 5: # ሜይ
+        eth_month = 9 if g_day <= 8 else 10
+        eth_day = g_day + 22 if g_day <= 8 else g_day - 8
+    elif g_month == 6: # ጁን
+        eth_month = 10 if g_day <= 7 else 11
+        eth_day = g_day + 23 if g_day <= 7 else g_day - 7
+    elif g_month == 7: # ጁላይ (አሁን ያለንበት ወር)
+        eth_month = 11 if g_day <= 7 else 12
+        eth_day = g_day + 23 if g_day <= 7 else g_day - 7
+    elif g_month == 8: # ኦገስት
+        eth_month = 12 if g_day <= 6 else 13
+        eth_day = g_day + 24 if g_day <= 6 else g_day - 6
+    elif g_month == 9: # ሴፕቴምበር (የዘመን መለወጫ ወር)
+        if g_day <= 5:
+            eth_month = 13
+            eth_day = g_day + 25
+        elif g_day >= 6 and g_day <= 10:
+            eth_month = 13
+            eth_day = g_day - 5  # ጳጉሜ
+        else:
+            eth_month = 1
+            eth_day = g_day - 10
+    elif g_month == 10: # ኦክቶበር
+        eth_month = 1 if g_day <= 11 else 2
+        eth_day = g_day + 20 if g_day <= 11 else g_day - 11
+    elif g_month == 11: # ኖቬምበር
+        eth_month = 2 if g_day <= 10 else 3
+        eth_day = g_day + 21 if g_day <= 10 else g_day - 10
+    elif g_month == 12: # ዲሴምበር
+        eth_month = 3 if g_day <= 10 else 4
+        eth_day = g_day + 21 if g_day <= 10 else g_day - 10
+
+    # ሰዓቱን በ24 ሰዓት ፎርማት ማዘጋጀት
     time_str = now.strftime("%H:%M")
     
-    # ሙሉ በሙሉ በቁጥር የኢትዮጵያ ዓመት-ወር-ቀን ሰዓት (ምሳሌ፡ 2018-10-30 10:16)
+    # ውጤት፡ ዓመት-ወር-ቀን ሰዓት (ምሳሌ፡ 2018-10-30 10:58)
     return f"{eth_year}-{eth_month:02d}-{eth_day:02d} {time_str}"
 DABO_WAGA = 9
 
