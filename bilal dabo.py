@@ -7,47 +7,85 @@ import requests
 def get_ethiopian_datetime():
     import datetime
     
-    # 1. የሰዓት ልዩነት ማስተካከያ (የኢትዮጵያ ሰዓት ከሰርቨር በ3 ሰዓት ይቀድማል)
+    # 1. የሰርቨሩን ሰዓት ወደ ኢትዮጵያ ሰዓት ማስተካከል (+3 ሰዓት)
     now = datetime.datetime.now() + datetime.timedelta(hours=3)
     
     g_year = now.year
     g_month = now.month
     g_day = now.day
     
-    # 2. የጁሊያን ቀን ቁጥር (JDN) ማስላት
-    if g_month <= 2:
-        y = g_year - 1
-        m = g_month + 12
+    # 2. የጃንዋሪ 1 ቀን የኢትዮጵያ ካላንደር መነሻ ማስተካከያ ማስላት
+    # የፈረንጆቹ ዓመት በ4 ሲካፈል ቀሪው 3 ከሆነ (ምሳሌ፡ 2023, 2027) ጳጉሜ 6 ትሆናለች
+    is_leap = 1 if (g_year % 4 == 3) else 0
+    
+    # የዓመተ ምህረት ልዩነት ማግኘት
+    if g_month > 9 or (g_month == 9 and g_day >= (11 + is_leap)):
+        eth_year = g_year - 7
     else:
-        y = g_year
-        m = g_month
+        eth_year = g_year - 8
         
-    A = y // 100
-    B = A // 4
-    C = 2 - A + B
-    E = int(365.25 * (y + 4716))
-    F = int(30.6001 * (m + 1))
-    jdn = C + g_day + E + F - 1524.5
-    
-    # 3. ከጁሊያን ቀን ቁጥር (JDN) ወደ ትክክለኛ የኢትዮጵያ ካላንደር መለወጥ
-    r = (int(jdn) - 1723856) % 1461
-    n = r % 365 + 365 * (r // 1460)
-    
-    eth_year = (int(jdn) - 1723856) // 1461 * 4 + r // 1460
-    eth_month = n // 30 + 1
-    eth_day = n % 30 + 1
-    
-    # የጳጉሜ እና የወራት መስተካከያ ህግ
-    if eth_day == 0:
-        eth_day = 30
-        eth_month -= 1
-    if eth_month == 14:
-        eth_month = 13
+    # በፈረንጆቹ ወራት መሰረት የኢትዮጵያ ወር እና ቀን መነሻ ማውጫ ማትሪክስ
+    # [የኢትዮጵያ_ወር, የፈረንጆች_ቀን_ሲቀነስ_የሚጨመር_ቁጥር, የሁለተኛው_ክፍል_የኢትዮጵያ_ወር]
+    if g_month == 1:    # ጃንዋሪ
+        start_matrix = [4, 8, 5] if (g_year % 4 == 1) else [4, 8, 5]
+    elif g_month == 2:  # ፌብሩዋሪ
+        start_matrix = [5, 7, 6]
+    elif g_month == 3:  # ማርች
+        start_matrix = [6, 9, 7] if ((g_year - 1) % 4 == 3) else [6, 9, 7]
+    elif g_month == 4:  # ኤፕሪል
+        start_matrix = [7, 8, 8]
+    elif g_month == 5:  # ሜይ
+        start_matrix = [8, 8, 9]
+    elif g_month == 6:  # ጁን
+        start_matrix = [9, 7, 10]
+    elif g_month == 7:  # ጁላይ (አሁን ያለንበት ወር)
+        start_matrix = [10, 7, 11]
+    elif g_month == 8:  # ኦገስት
+        start_matrix = [11, 6, 12]
+    elif g_month == 9:  # ሴፕቴምበር
+        start_matrix = [12, 5, 13]
+    elif g_month == 10: # ኦክቶበር
+        start_matrix = [1, 11, 2] if (g_year % 4 == 3) else [1, 10, 2]
+    elif g_month == 11: # ኖቬምበር
+        start_matrix = [2, 10, 3] if (g_year % 4 == 3) else [2, 9, 3]
+    elif g_month == 12: # ዲሴምበር
+        start_matrix = [3, 10, 4] if (g_year % 4 == 3) else [3, 9, 4]
+
+    # የትክክለኛውን ቀን እና ወር ስሌት ማውጣት
+    # ማርች ላይ የካቲት 29 ካለ ማስተካከያ ይደረጋል
+    offset_day = start_matrix[1]
+    if g_month == 3 and (g_year % 4 == 0):
+        offset_day = 8
         
-    # 4. ሰዓቱን በ24 ሰዓት ፎርማት ማዘጋጀት
+    if g_day <= offset_day:
+        eth_month = start_matrix[0]
+        # ወሩ ከመግባቱ በፊት የባለፈው ወር ቀሪ ቀናትን መቁጠር
+        if g_month == 3 and (g_year % 4 == 0):
+            eth_day = g_day + 22
+        elif g_month == 1:
+            eth_day = g_day + 23 if ((g_year-1) % 4 == 3) else g_day + 22
+        elif g_month in [2, 4, 5, 7, 8]:
+            eth_day = g_day + 23
+        elif g_month in [6, 9, 10, 11, 12]:
+            eth_day = g_day + 22
+    else:
+        eth_month = start_matrix[2]
+        eth_day = g_day - offset_day
+
+    # የሴፕቴምበር (አዲስ ዓመት) ልዩ ማስተካከያ
+    if g_month == 9:
+        new_year_day = 12 if (g_year % 4 == 3) else 11
+        if g_day >= new_year_day:
+            eth_month = 1
+            eth_day = g_day - new_year_day + 1
+        else:
+            eth_month = 13
+            eth_day = g_day - 5
+
+    # 3. ሰዓቱን በ24 ሰዓት ፎርማት መውሰድ
     time_str = now.strftime("%H:%M")
     
-    # ውጤት፡ ዓመት-ወር-ቀን ሰዓት (ዛሬን፡ 2018-11-01 11:03 አድርጎ ያወጣዋል - ህዳር ሳይሆን 11ኛ ወር ሐምሌ ነው)
+    # ውጤት፡ ዓመት-ወር-ቀን ሰዓት (ምሳሌ፡ 2018-10-30 11:15)
     return f"{eth_year}-{eth_month:02d}-{eth_day:02d} {time_str}"
 DABO_WAGA = 9
 
