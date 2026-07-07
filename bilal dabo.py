@@ -1,17 +1,13 @@
 import streamlit as st
 import pandas as pd
 import json
-from datetime import datetime
+import datetime
 import requests
+
 def get_ethiopian_datetime():
-    import datetime
-    
-    def get_ethiopian_datetime():
-    import datetime
-    # የሰርቨሩን ሰዓት በኢትዮጵያ ሰዓት ለመተካት የ 3 ሰዓት ልዩነት መደመር
+    # የሰርቨሩን ሰዓት ወደ ትክክለኛው የኢትዮጵያ ሰዓት ለመቀየር 3 ሰዓት መደመር
     የአሁኑ_ሰዓት = datetime.datetime.now() + datetime.timedelta(hours=3)
-    
-    # ሙሉ በሙሉ በቁጥር ብቻ የዓመት-ወር-ቀን ሰዓት:ደቂቃ ፎርማት (ምሳሌ፡ 2026-07-07 10:16)
+    # ሙሉ በሙሉ በቁጥር ብቻ የዓመት-ወር-ቀን ሰዓት:ደቂቃ (ምሳሌ፡ 2026-07-07 10:16)
     return የአሁኑ_ሰዓት.strftime("%Y-%m-%d %H:%M")
 DABO_WAGA = 9
 
@@ -106,7 +102,7 @@ def load_expenses():
 
 def add_expense(item, amount):
     payload = {
-        "date": datetime.now().strftime('%Y-%m-%d %H:%M'),
+        "date": get_ethiopian_datetime(),
         "item": item,
         "amount": float(amount)
     }
@@ -126,7 +122,8 @@ staff_history = load_staff_history()
 expenses_data = load_expenses()
 
 def get_daily_id(s_name):
-    return f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_{s_name}"
+    የአሁኑ_ሰዓት = datetime.datetime.now() + datetime.timedelta(hours=3)
+    return f"{የአሁኑ_ሰዓት.strftime('%Y-%m-%d_%H-%M-%S')}_{s_name}"
 
 # --- 🔒 የመግቢያ ሲስተም ---
 def check_password():
