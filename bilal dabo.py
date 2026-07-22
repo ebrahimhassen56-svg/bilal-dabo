@@ -474,18 +474,12 @@ if check_password():
             
             import datetime
 
-# የዛሬውን ቀን በነባሪነት ለመስጠት datetime.date.today() ተጠቀም
-import datetime
-
-# የዛሬውን ቀን በነባሪነት ለመስጠት datetime.date.today() ተጠቀም
-# 1. ከ col_d1 እና col_d2 ውጭ አድርገኸው ከሆነ (ከግራ ጥግ ይጀምራል)፦
 col_d1, col_d2 = st.columns(2)
 with col_d1:
     start_date = st.date_input("ከቀን", datetime.date.today())
 with col_d2:
     end_date = st.date_input("እስከ ቀን", datetime.date.today())
 
-# እቺ መስመር ከግራ ጥግ ትጀምራለች (ከፊት ለፊቷ Space የለም)
 if start_date <= end_date:
     st.success("ትክክለኛ የቀን ክልል መርጠዋል")
                 s_str = start_date.strftime("%Y-%m-%d")
