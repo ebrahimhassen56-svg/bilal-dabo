@@ -469,21 +469,38 @@ if check_password():
         show_summary = st.checkbox("📊 የአጠቃላይ ቢዝነስ ማጠቃለያ ለማየት እዚህ ጋ ያብሩ", value=False)
         
         # --- 📅 [ክፍል 1]፡ የሙሉ ዳቦ ቤቱ የቀን/የሳምንት/የወር ጠቅላላ ማጠቃለያ ሂሳብ (በቼክቦክስ የሚመራ) ---
+        # --- 📅 [ክፍል 1]፡ የሙሉ ዳቦ ቤቱ የቀን/የሳምንት/የወር ጠቅላላ ማጠቃለያ ሂሳብ ---
         if show_summary:
-            st.subheader("📅 የአጠቃላይ የቢዝነሱ የዘመን ክልል ማጠቃለያ (የቀን፣ የሳምንት፣ የወር ድምር)")
+            st.subheader("📅 የአጠቃላይ የቢዝነሱ የዘመን ክልል ማጠቃለያ (በኢትዮጵያ አቆጣጠር)")
             
-            import datetime
+            # በኢትዮጵያ አቆጣጠር የቀን መምረጫዎች
+            col_eth1, col_eth2 = st.columns(2)
+            with col_eth1:
+                st.caption("📌 **ከቀን (የመጀመሪያ ቀን)፦**")
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    s_day = st.number_input("ቀን", min_value=1, max_value=30, value=1, key="s_d")
+                with c2:
+                    s_month = st.number_input("ወር", min_value=1, max_value=13, value=1, key="s_m")
+                with c3:
+                    s_year = st.number_input("ዓ.ም", min_value=2015, max_value=2030, value=2018, key="s_y")
 
-            col_d1, col_d2 = st.columns(2)
-            with col_d1:
-                start_date = st.date_input("ከቀን", datetime.date.today())
-            with col_d2:
-                end_date = st.date_input("እስከ ቀን", datetime.date.today())
+            with col_eth2:
+                st.caption("📌 **እስከ ቀን (የመጨረሻ ቀን)፦**")
+                c4, c5, c6 = st.columns(3)
+                with c4:
+                    e_day = st.number_input("ቀን", min_value=1, max_value=30, value=30, key="e_d")
+                with c5:
+                    e_month = st.number_input("ወር", min_value=1, max_value=13, value=12, key="e_m")
+                with c6:
+                    e_year = st.number_input("ዓ.ም", min_value=2015, max_value=2030, value=2018, key="e_y")
 
-            if start_date <= end_date:
-                st.success("ትክክለኛ የቀን ክልል መርጠዋል")
-                s_str = start_date.strftime("%Y-%m-%d")
-                e_str = end_date.strftime("%Y-%m-%d")
+            # ቀኖቹን ወደ YYYY-MM-DD ፎርማት ማዘጋጀት
+            s_str = f"{s_year:04d}-{s_month:02d}-{s_day:02d}"
+            e_str = f"{e_year:04d}-{e_month:02d}-{e_day:02d}"
+
+            if s_str <= e_str:
+                st.success(f"📅 የተመረጠው ክልል፦ ከ **{s_str}** እስከ **{e_str}**")
                 
                 # ለጠቅላላ ቢዝነሱ ድምር ተለዋዋጮች
                 total_business_cash_dabo = 0
@@ -501,7 +518,7 @@ if check_password():
                 
                 # 1. ከሁሉም ሰራተኞች ታሪክ ላይ መረጃዎችን በአንድ ላይ መደመር
                 for r in staff_history.values():
-                    r_date_str = r.get('date', '')[:10]
+                    r_date_str = str(r.get('date', ''))[:10]
                     if s_str <= r_date_str <= e_str:
                         total_business_cash_dabo += r.get('cash_sold_dabo', 0)
                         total_business_cash_birr += r.get('cash_sold_birr', 0)
@@ -516,7 +533,7 @@ if check_password():
                 # 2. ከወጪ መዝገብ ላይ ወጪና ዱቄት መደመር
                 if expenses_data.get("list"):
                     for exp in expenses_data["list"]:
-                        exp_date_str = exp.get('date', '')[:10]
+                        exp_date_str = str(exp.get('date', ''))[:10]
                         if s_str <= exp_date_str <= e_str:
                             item_name = str(exp.get('item', ''))
                             if "🌾 ዱቄት" in item_name:
