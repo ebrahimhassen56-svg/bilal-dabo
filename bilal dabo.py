@@ -472,11 +472,14 @@ if check_password():
         if show_summary:
             st.subheader("📅 የአጠቃላይ የቢዝነሱ የዘመን ክልል ማጠቃለያ (የቀን፣ የሳምንት፣ የወር ድምር)")
             
-            col_d1, col_d2 = st.columns(2)
-            with col_d1:
-                start_date = st.date_input("ከቀን", value=datetime.now())
-            with col_d2:
-                end_date = st.date_input("እስከ ቀን", value=datetime.now())
+            import datetime
+
+# የዛሬውን ቀን በነባሪነት ለመስጠት datetime.date.today() ተጠቀም
+col_d1, col_d2 = st.columns(2)
+with col_d1:
+    start_date = st.date_input("ከቀን", datetime.date.today())
+with col_d2:
+    end_date = st.date_input("እስከ ቀን", datetime.date.today())
                 
             if start_date <= end_date:
                 s_str = start_date.strftime("%Y-%m-%d")
