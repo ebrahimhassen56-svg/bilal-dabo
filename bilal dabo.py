@@ -482,37 +482,38 @@ with col_d2:
 
 if start_date <= end_date:
     st.success("ትክክለኛ የቀን ክልል መርጠዋል")
-                s_str = start_date.strftime("%Y-%m-%d")
-                e_str = end_date.strftime("%Y-%m-%d")
-                
-                # ለጠቅላላ ቢዝነሱ ድምር ተለዋዋጮች
-                total_business_cash_dabo = 0
-                total_business_cash_birr = 0
-                total_business_new_dube_dabo = 0
-                
-                total_business_coll_dabo = 0
-                total_business_coll_birr = 0
-                
-                total_business_expected_birr = 0
-                total_business_actual_birr = 0
-                
-                total_business_expenses = 0
-                total_business_duket_bags = 0
-                
-                # 1. ከሁሉም ሰራተኞች ታሪክ ላይ መረጃዎችን በአንድ ላይ መደመር
-                for r in staff_history.values():
-                    r_date_str = r.get('date', '')[:10]
-                    if s_str <= r_date_str <= e_str:
-                        total_business_cash_dabo += r.get('cash_sold_dabo', 0)
-                        total_business_cash_birr += r.get('cash_sold_birr', 0)
-                        total_business_new_dube_dabo += r.get('new_dube_dabo', 0)
-                        
-                        total_business_coll_dabo += r.get('coll_dabo', 0)
-                        total_business_coll_birr += r.get('coll_birr', 0)
-                        
-                        total_business_expected_birr += r.get('expected_birr', 0)
-                        total_business_actual_birr += r.get('actual_birr', 0)
-                
+    s_str = start_date.strftime("%Y-%m-%d")
+    e_str = end_date.strftime("%Y-%m-%d")
+    
+    # ለጠቅላላ ቢዝነሱ ድምር ተለዋዋጮች
+    total_business_cash_dabo = 0
+    total_business_cash_birr = 0
+    total_business_new_dube_dabo = 0
+    
+    total_business_coll_dabo = 0
+    total_business_coll_birr = 0
+    
+    total_business_expected_birr = 0
+    total_business_actual_birr = 0
+    
+    total_business_expenses = 0
+    total_business_duket_bags = 0
+    
+    # 1. ከሁሉም ሰራተኞች ታሪክ ላይ መረጃዎችን በአንድ ላይ መደመር
+    for r in staff_history.values():
+        r_date_str = r.get('date', '')[:10]
+        if s_str <= r_date_str <= e_str:
+            total_business_cash_dabo += r.get('cash_sold_dabo', 0)
+            total_business_cash_birr += r.get('cash_sold_birr', 0)
+            total_business_new_dube_dabo += r.get('new_dube_dabo', 0)
+            
+            total_business_coll_dabo += r.get('coll_dabo', 0)
+            total_business_coll_birr += r.get('coll_birr', 0)
+            
+            total_business_expected_birr += r.get('expected_birr', 0)
+            total_business_actual_birr += r.get('actual_birr', 0)
+else:
+    st.error("የመጀመሪያው ቀን ከሁለተኛው ቀን ማነስ አለበት!")
                 # 2. ከወጪ መዝገብ ላይ ወጪና ዱቄት መደመር
                 if expenses_data.get("list"):
                     for exp in expenses_data["list"]:
