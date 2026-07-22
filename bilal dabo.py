@@ -512,8 +512,6 @@ if start_date <= end_date:
             
             total_business_expected_birr += r.get('expected_birr', 0)
             total_business_actual_birr += r.get('actual_birr', 0)
-else:
-    st.error("የመጀመሪያው ቀን ከሁለተኛው ቀን ማነስ አለበት!")
                 # 2. ከወጪ መዝገብ ላይ ወጪና ዱቄት መደመር
                 if expenses_data.get("list"):
                     for exp in expenses_data["list"]:
