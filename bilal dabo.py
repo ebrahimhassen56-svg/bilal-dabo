@@ -5,50 +5,61 @@ import datetime
 import requests
 
 def get_ethiopian_datetime():
+    import datetime
+    
+    # 1. የሰርቨሩን ሰዓት ወደ ኢትዮጵያ ሰዓት ማስተካከል (+3 ሰዓት)
     now = datetime.datetime.now() + datetime.timedelta(hours=3)
     
     g_year = now.year
     g_month = now.month
     g_day = now.day
     
+    # 2. የጃንዋሪ 1 ቀን የኢትዮጵያ ካላንደር መነሻ ማስተካከያ ማስላት
+    # የፈረንጆቹ ዓመት በ4 ሲካፈል ቀሪው 3 ከሆነ (ምሳሌ፡ 2023, 2027) ጳጉሜ 6 ትሆናለች
     is_leap = 1 if (g_year % 4 == 3) else 0
     
+    # የዓመተ ምህረት ልዩነት ማግኘት
     if g_month > 9 or (g_month == 9 and g_day >= (11 + is_leap)):
         eth_year = g_year - 7
     else:
         eth_year = g_year - 8
         
-    if g_month == 1:
+    # በፈረንጆቹ ወራት መሰረት የኢትዮጵያ ወር እና ቀን መነሻ ማውጫ ማትሪክስ
+    # [የኢትዮጵያ_ወር, የፈረንጆች_ቀን_ሲቀነስ_የሚጨመር_ቁጥር, የሁለተኛው_ክፍል_የኢትዮጵያ_ወር]
+    if g_month == 1:    # ጃንዋሪ
         start_matrix = [4, 8, 5] if (g_year % 4 == 1) else [4, 8, 5]
-    elif g_month == 2:
+    elif g_month == 2:  # ፌብሩዋሪ
         start_matrix = [5, 7, 6]
-    elif g_month == 3:
+    elif g_month == 3:  # ማርች
         start_matrix = [6, 9, 7] if ((g_year - 1) % 4 == 3) else [6, 9, 7]
-    elif g_month == 4:
+    elif g_month == 4:  # ኤፕሪል
         start_matrix = [7, 8, 8]
-    elif g_month == 5:
+    elif g_month == 5:  # ሜይ
         start_matrix = [8, 8, 9]
-    elif g_month == 6:
+    elif g_month == 6:  # ጁን
         start_matrix = [9, 7, 10]
-    elif g_month == 7:
+    elif g_month == 7:  # ጁላይ (አሁን ያለንበት ወር)
         start_matrix = [10, 7, 11]
-    elif g_month == 8:
+    elif g_month == 8:  # ኦገስት
         start_matrix = [11, 6, 12]
-    elif g_month == 9:
+    elif g_month == 9:  # ሴፕቴምበር
         start_matrix = [12, 5, 13]
-    elif g_month == 10:
+    elif g_month == 10: # ኦክቶበር
         start_matrix = [1, 11, 2] if (g_year % 4 == 3) else [1, 10, 2]
-    elif g_month == 11:
+    elif g_month == 11: # ኖቬምበር
         start_matrix = [2, 10, 3] if (g_year % 4 == 3) else [2, 9, 3]
-    elif g_month == 12:
+    elif g_month == 12: # ዲሴምበር
         start_matrix = [3, 10, 4] if (g_year % 4 == 3) else [3, 9, 4]
 
+    # የትክክለኛውን ቀን እና ወር ስሌት ማውጣት
+    # ማርች ላይ የካቲት 29 ካለ ማስተካከያ ይደረጋል
     offset_day = start_matrix[1]
     if g_month == 3 and (g_year % 4 == 0):
         offset_day = 8
         
     if g_day <= offset_day:
         eth_month = start_matrix[0]
+        # ወሩ ከመግባቱ በፊት የባለፈው ወር ቀሪ ቀናትን መቁጠር
         if g_month == 3 and (g_year % 4 == 0):
             eth_day = g_day + 22
         elif g_month == 1:
@@ -61,6 +72,7 @@ def get_ethiopian_datetime():
         eth_month = start_matrix[2]
         eth_day = g_day - offset_day
 
+    # የሴፕቴምበር (አዲስ ዓመት) ልዩ ማስተካከያ
     if g_month == 9:
         new_year_day = 12 if (g_year % 4 == 3) else 11
         if g_day >= new_year_day:
@@ -70,9 +82,11 @@ def get_ethiopian_datetime():
             eth_month = 13
             eth_day = g_day - 5
 
+    # 3. ሰዓቱን በ24 ሰዓት ፎርማት መውሰድ
     time_str = now.strftime("%H:%M")
+    
+    # ውጤት፡ ዓመት-ወር-ቀን ሰዓት (ምሳሌ፡ 2018-10-30 11:15)
     return f"{eth_year}-{eth_month:02d}-{eth_day:02d} {time_str}"
-
 DABO_WAGA = 9
 
 # --- 🌐 SUPABASE CLOUD DATABASE CONFIG ---
@@ -86,11 +100,10 @@ HEADERS = {
     "Prefer": "return=representation"
 }
 
-# --- 🗄 የዳታቤዝ ረዳት ተግባራት (CACHE የተደረጉ) ---
+# --- 🗄 የዳታቤዝ ረዳት ተግባራት ---
 def init_db():
     pass
 
-@st.cache_data(ttl=600)  # መረጃውን ለ10 ደቂቃ ሜሞሪ ላይ ይይዛል
 def load_dube_record():
     url = f"{SUPABASE_URL}/rest/v1/dube_record?select=*"
     res = requests.get(url, headers=HEADERS)
@@ -116,9 +129,7 @@ def save_dube_record(dube_data):
         headers_upsert = HEADERS.copy()
         headers_upsert["Prefer"] = "resolution=merge-duplicates"
         requests.post(url, headers=headers_upsert, json=payload)
-    st.cache_data.clear()  # አዲስ ዳታ ስለገባ ካሹን ያድሳል
 
-@st.cache_data(ttl=600)
 def load_staff_history():
     url = f"{SUPABASE_URL}/rest/v1/staff_history?select=*"
     res = requests.get(url, headers=HEADERS)
@@ -155,14 +166,11 @@ def save_staff_record_single(r_id, r):
     headers_upsert = HEADERS.copy()
     headers_upsert["Prefer"] = "resolution=merge-duplicates"
     requests.post(url, headers=headers_upsert, json=payload)
-    st.cache_data.clear()
 
 def delete_staff_record(r_id):
     url = f"{SUPABASE_URL}/rest/v1/staff_history?record_id=eq.{r_id}"
     requests.delete(url, headers=HEADERS)
-    st.cache_data.clear()
 
-@st.cache_data(ttl=600)
 def load_expenses():
     url = f"{SUPABASE_URL}/rest/v1/expenses?select=*"
     res = requests.get(url, headers=HEADERS)
@@ -181,19 +189,18 @@ def add_expense(item, amount):
     
     url = f"{SUPABASE_URL}/rest/v1/expenses"
     requests.post(url, headers=headers_expense, json=payload)
-    st.cache_data.clear()
 
 def delete_expense(expense_id):
     url = f"{SUPABASE_URL}/rest/v1/expenses?id=eq.{expense_id}"
     requests.delete(url, headers=HEADERS)
-    st.cache_data.clear()
 
-# ዳታዎችን ከCloud መጫን (አሁን በፈጣኑ Cache ይጫናል)
+# ዳታዎችን ከCloud መጫን
 dube_mezgebiya = load_dube_record()
 staff_history = load_staff_history()
 expenses_data = load_expenses()
 
 def get_daily_id(s_name):
+    # የአሁኑን የኢትዮጵያ ቀን በ ID ውስጥ መጠቀም
     eth_now = get_ethiopian_datetime().replace(" ", "_").replace(":", "-")
     return f"{eth_now}_{s_name}"
 
@@ -223,6 +230,7 @@ if check_password():
     st.set_page_config(page_title="ቢላል ዳቦ ቤት", layout="wide")
     st.title("🥖 ቢላል ዳቦ ቤት - የላቀ የሂሳብ መቆጣጠሪያ ")
 
+    # ማውጫዎች
     menu = [
         "🏠 ዋና ገጽ (Dashboard)", 
         "📝 [1] አዲስ ዱቤ", 
@@ -241,7 +249,12 @@ if check_password():
 
     # --- 🏠 ዋና ገጽ (Dashboard) ---
     if choice == "🏠 ዋና ገጽ (Dashboard)":
-        live_expenses = expenses_data.get("list", [])
+        try:
+            url_exp = f"{SUPABASE_URL}/rest/v1/expenses"
+            res_exp = requests.get(url_exp, headers=HEADERS)
+            live_expenses = res_exp.json() if res_exp.status_code == 200 else []
+        except:
+            live_expenses = []
             
         total_uncollected_dabo = sum(max(0, v.get('original', 0) + v.get('yedere_dube', 0) - v.get('paid', 0)) for v in dube_mezgebiya.values())
         total_uncollected_birr = total_uncollected_dabo * DABO_WAGA
@@ -325,6 +338,7 @@ if check_password():
                     st.rerun()
 
     # --- 💰 [2] ዱቤ መቀበያ ---
+    # --- 💰 [2] ዱቤ መቀበያ ---
     elif choice == "💰 [2] ዱቤ መቀበያ":
         st.header("💰 ዱቤ መቀበያ")
         s_name = st.text_input("ተቀባይ ሰራተኛ ስም").strip().capitalize()
@@ -352,6 +366,9 @@ if check_password():
                 st.success(f"✅ ከ {sel_name} ተቀብሏል!")
                 st.rerun()
 
+
+    # --- 📊 [3] ስራ መዝጊያ ---
+    # --- 📊 [3] ስራ መዝጊያ ---
     # --- 📊 [3] ስራ መዝጊያ ---
     elif choice == "📊 [3] ስራ መዝጊያ":
         st.header("📊 የዕለት ስራ መዝጊያ")
@@ -419,6 +436,7 @@ if check_password():
                 cash_sold_dabo = total_out - new_dube_total
                 cash_sold_birr = cash_sold_dabo * DABO_WAGA
                 
+                # 🛠 እዚህ ጋር ነው ወጪው ተቀንሶ ትክክለኛው 'Expected' የሚሰላው!
                 if exp_item and exp_amount > 0:
                     add_expense(f"{s_name}: {exp_item}", exp_amount)
                     expected = cash_sold_birr + coll_birr_sum - exp_amount
@@ -441,7 +459,8 @@ if check_password():
                 st.session_state.closing_new_dube = [{"name": "", "amt": 0}]
                 st.success(f"✅ {s_name} የዛሬ ሂሳብ እና ወጪ በተሳካ ሁኔታ ተመዝግቧል!")
                 st.rerun()
-                # --- 📜 [4] ሪፖርት ---
+    # --- 📜 [4] ሪፖርት ---
+# --- 📜 [4] ሪፖርት ---
     elif choice == "📜 [4] ሪፖርት":
         st.header("📊 የክትትልና የሪፖርት ማዕከል")
         st.write("---")
@@ -449,10 +468,12 @@ if check_password():
         # 🛠 ቼክቦክስ - ማጠቃለያውን ለማሳየት/ለመደበቅ
         show_summary = st.checkbox("📊 የአጠቃላይ ቢዝነስ ማጠቃለያ ለማየት እዚህ ጋ ያብሩ", value=False)
         
+        # --- 📅 [ክፍል 1]፡ የሙሉ ዳቦ ቤቱ የቀን/የሳምንት/የወር ጠቅላላ ማጠቃለያ ሂሳብ (በቼክቦክስ የሚመራ) ---
         # --- 📅 [ክፍል 1]፡ የሙሉ ዳቦ ቤቱ የቀን/የሳምንት/የወር ጠቅላላ ማጠቃለያ ሂሳብ ---
         if show_summary:
             st.subheader("📅 የአጠቃላይ የቢዝነሱ የዘመን ክልል ማጠቃለያ (በኢትዮጵያ አቆጣጠር)")
             
+            # በኢትዮጵያ አቆጣጠር የቀን መምረጫዎች
             col_eth1, col_eth2 = st.columns(2)
             with col_eth1:
                 st.caption("📌 **ከቀን (የመጀመሪያ ቀን)፦**")
@@ -474,12 +495,14 @@ if check_password():
                 with c6:
                     e_year = st.number_input("ዓ.ም", min_value=2015, max_value=2030, value=2018, key="e_y")
 
+            # ቀኖቹን ወደ YYYY-MM-DD ፎርማት ማዘጋጀት
             s_str = f"{s_year:04d}-{s_month:02d}-{s_day:02d}"
             e_str = f"{e_year:04d}-{e_month:02d}-{e_day:02d}"
 
             if s_str <= e_str:
                 st.success(f"📅 የተመረጠው ክልል፦ ከ **{s_str}** እስከ **{e_str}**")
                 
+                # ለጠቅላላ ቢዝነሱ ድምር ተለዋዋጮች
                 total_business_cash_dabo = 0
                 total_business_cash_birr = 0
                 total_business_new_dube_dabo = 0
@@ -524,21 +547,25 @@ if check_password():
                             else:
                                 total_business_expenses += float(exp.get('amount', 0))
                 
+                # ካሽ ዳቦ + ከዱቤ የተሰበሰበ ዳቦ (በአንድ ላይ የተደመረ)
                 total_collected_dabo_combined = total_business_cash_dabo + total_business_coll_dabo
                 
                 st.markdown(f"##### 🏢 ከ **{s_str}** እስከ **{e_str}** የዳቦ ቤቱ አጠቃላይ የተደመረ ሂሳብ፦")
                 
+                # የመጀመሪያው ረድፍ ካርዶች
                 c1, c2, c3 = st.columns(3)
                 c1.metric("🥖 ጠቅላላ የመጣ ዳቦ (ካሽ + የድሮ ዱቤ)", f"{total_collected_dabo_combined} ዳቦ", f"ካሽ፡ {total_business_cash_dabo} | ከድሮ ዱቤ የተመለሰ፦ {total_business_coll_dabo}")
                 c2.metric("💰 ማስገባት የነበረባቸው ብር (Expected)", f"{total_business_expected_birr} ብር")
                 c3.metric("💵 በትክክል ያመጡት ብር (Actual)", f"{total_business_actual_birr} ብር")
                 
                 st.write("---")
+                # ሁለተኛው ረድፍ ካርዶች
                 c4, c5, c6 = st.columns(3)
                 c4.metric("📈 አዲስ ለደንበኞች የተሰጠ ዱቤ", f"{total_business_new_dube_dabo} ዳቦ")
                 c5.metric("💸 የወጣ ጠቅላላ መደበኛ ወጪ", f"{total_business_expenses} ብር")
                 c6.metric("🌾 የወጣ ጠቅላላ ዱቄት", f"{total_business_duket_bags} ጆንያ")
                 
+                # የትርፍና ኪሳራ ልዩነት ማሳያ
                 total_diff = total_business_actual_birr - total_business_expected_birr
                 if total_diff >= 0:
                     st.success(f"📈 አጠቃላይ የገንዘብ ልዩነት (ትርፍ)፦ +{total_diff} ብር")
@@ -623,7 +650,6 @@ if check_password():
                             st.rerun()
         else: 
             st.info("ምንም የሪፖርት ታሪክ የለም።")
-
     # --- 🛠 [5] ማስተካከያ (EDIT) ---
     elif choice == "🛠 [5] ማስተካከያ (EDIT)":
         st.header("🛠 ማስተካከያ (EDIT) ማዕከል")
@@ -638,7 +664,7 @@ if check_password():
         # --- [5] የሰራተኛ ስም ማስተካከያ ---
         if opt_main.startswith("[5]"):
             st.subheader("✏️ የሰራተኛ ስም ማሻሻያ ማዕከል")
-            st.caption("⚠️ የሰራተኛ ስም ሲቀይሩ የድሮ የዕለት ሪፖርቶች ታሪክ በሙሉ ወደ አዲሱ ስም ይዛወራል!")
+            st.caption("⚠️ የሰራተኛ ስም ሲቀይሩ የድሮ የዕለት ሪፖርቶች ታሪክ በሙሉ ወደ አዲሱ ስም ይዛወራል! ስሙ አስቀድሞ ካለ ከነበረው ጋር ይዋሃዳል።")
             
             all_staffs = sorted(list(set([r['staff_name'] for r in staff_history.values() if 'staff_name' in r])))
             
@@ -651,18 +677,27 @@ if check_password():
                     
                     if st.button("💾 የሰራተኛ ስም አሻሽል", key="execute_staff_rename_btn"):
                         if new_staff_name and new_staff_name != old_staff_name:
+                            
+                            # በሜሞሪ ውስጥ ያሉትን የድሮ ቁልፎች (IDs) ለይቶ መያዝ
                             old_ids = [r_id for r_id, r in staff_history.items() if r.get('staff_name') == old_staff_name]
                             
                             for old_id in old_ids:
-                                r = staff_history[old_id]
+                                r = staff_history.pop(old_id) # ከሜሞሪ ሙሉ በሙሉ መንቀል
                                 r['staff_name'] = new_staff_name
-                                time_part = old_id.split('_')[0] + "_" + old_id.split('_')[1] if len(old_id.split('_')) >= 2 else get_ethiopian_datetime().replace(" ", "_").replace(":", "-")
+                                
+                                # አዲስ መለያ ID መፍጠር
+                                time_part = old_id.split('_')[0] + "_" + old_id.split('_')[1] if len(old_id.split('_')) >= 2 else datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
                                 new_id = f"{time_part}_{new_staff_name}"
                                 
+                                # 1. አዲሱን በፋይል ላይ መጻፍ
                                 save_staff_record_single(new_id, r)
+                                # 2. የድሮውን ከፋይል ላይ ማጥፋት
                                 delete_staff_record(old_id)
+                                
+                                # 3. አዲሱን በሜሞሪ ውስጥ መመዝገብ
+                                staff_history[new_id] = r
                                     
-                            st.success(f"✅ የሰራተኛ ስም ከ '{old_staff_name}' ወደ '{new_staff_name}' ተቀይሯል!")
+                            st.success(f"✅ የሰራተኛ ስም ከ '{old_staff_name}' ወደ '{new_staff_name}' ተቀይሮ የድሮው ታሪክ ጠፍቷል!")
                             st.rerun()
                         else:
                             st.info("ምንም የተቀየረ ስም የለም ወይም ስሙ ባዶ ነው።")
@@ -670,7 +705,7 @@ if check_password():
         # --- [4] የደንበኛ ስም ማስተካከያ ---
         elif opt_main.startswith("[4]"):
             st.subheader("✏️ የደንበኛ ስም ማሻሻያ ማዕከል")
-            st.caption("⚠️ ስሙን ሲቀይሩ የድሮው የዱቤ ታሪክ በሙሉ ወደ አዲሱ ስም ይዞራል!")
+            st.caption("⚠️ ስሙን ሲቀይሩ የድሮው የዱቤ ታሪክ በሙሉ ወደ አዲሱ ስም ይዞራል! የድሮው ስም ሙሉ በሙሉ ከሲስተሙ ይጠፋል።")
             
             all_customers = list(dube_mezgebiya.keys())
             if not all_customers:
@@ -682,6 +717,8 @@ if check_password():
                     
                     if st.button("💾 የስም ማሻሻያ አውርድ", key="execute_rename_btn_opt4"):
                         if new_name and new_name != old_name:
+                            
+                            # 1. በዋናው የዱቤ መዝገብ ላይ ስሙን መቀየር/መቀላቀል
                             old_data = dube_mezgebiya.pop(old_name, None) 
                             
                             if old_data:
@@ -694,23 +731,27 @@ if check_password():
                                     
                                 save_dube_record(dube_mezgebiya) 
                             
+                            # 2. በየቀኑ የሰራተኞች ታሪክ (በፋይልም በሜሞሪም) ውስጥ የድሮውን ስም ፈንቅሎ ማጥፋት
                             for r_id, r in staff_history.items():
                                 record_changed = False
                                 
+                                # የከፈለው የድሮ ዱቤ ታሪክ ውስጥ ካለ
                                 if "collected_names" in r and old_name in r["collected_names"]:
                                     old_coll = r["collected_names"].pop(old_name, 0) 
                                     r["collected_names"][new_name] = r["collected_names"].get(new_name, 0) + old_coll
                                     record_changed = True
                                     
+                                # የዛሬ አዲስ ዱቤ ታሪክ ውስጥ ካለ
                                 if "today_dube_details" in r and old_name in r["today_dube_details"]:
                                     old_today = r["today_dube_details"].pop(old_name, 0) 
                                     r["today_dube_details"][new_name] = r["today_dube_details"].get(new_name, 0) + old_today
                                     record_changed = True
                                 
+                                # ለውጡን በፋይል ላይ መልሶ መጻፍ
                                 if record_changed:
                                     save_staff_record_single(r_id, r)
                                 
-                            st.success(f"✅ የደንበኛ ስም ከ '{old_name}' ወደ '{new_name}' ተቀይሯል!")
+                            st.success(f"✅ የደንበኛ ስም ከ '{old_name}' ወደ '{new_name}' ተቀይሯል! የድሮው ስም ሙሉ በሙሉ ጠፍቷል።")
                             st.rerun()
                         else:
                             st.info("ምንም የተቀየረ ስም የለም ወይም ስሙ ባዶ ነው።")
@@ -804,12 +845,13 @@ if check_password():
                     save_staff_record_single(sel_id, sel_rec)
                     st.success("✅ ሂሳቡ በተሳካ ሁኔታ ተስተካክሏል!")
                     st.rerun()
-
+    # --- 💸 [6] ወጪ መመዝገቢያ ---
     # --- 💸 [6] ወጪ መመዝገቢያ ---
     elif choice == "💸 [6] ወጪ መመዝገቢያ":
         st.header("💸 የወጪ እና የዱቄት ፍጆታ መቆጣጠሪያ")
         st.write("---")
         
+        # ሰራተኛው መጀመሪያ የሚመርጥባቸው ሁለት ቼክ ቦክሶች
         st.subheader("🛠 ምን መመዝገብ ይፈልጋሉ? (ከታች ይምረጡ)")
         col_chk1, col_chk2 = st.columns(2)
         with col_chk1:
@@ -818,9 +860,11 @@ if check_password():
             show_duket = st.checkbox("🌾 የዕለት የዱቄት ፍጆታ መመዝገቢያ", value=False)
             
         st.write("---")
+        
+        # ገጹን ለሁለት ከፍለን ጎን ለጎን እናሳየዋለን
         col_left, col_right = st.columns(2)
         
-        # --- 🔹 [1] የመደበኛ ወጪዎች ክፍል ---
+        # --- 🔹 [1] የመደበኛ ወጪዎች ክፍል (ብር ያለበት) ---
         with col_left:
             if show_normal:
                 st.subheader("📝 መደበኛ ወጪ መመዝገብ")
@@ -856,16 +900,18 @@ if check_password():
                 else: 
                     st.info("ምንም የወጪ መዝገብ የለም።")
 
-        # --- 🌾 [2] የዱቄት ፍጆታ ክፍል ---
+        # --- 🌾 [2] የዱቄት ፍጆታ ክፍል (የጆንያ ብዛት ብቻ) ---
         with col_right:
             if show_duket:
                 st.subheader("🌾 የዛሬ የዱቄት ፍጆታ መመዝገብ")
                 with st.form("duket_consumption_form", clear_on_submit=True):
+                    # የብር ዋጋው ሙሉ በሙሉ ጠፍቶ የጆንያ ብዛት ብቻ ነው የሚጠይቀው
                     duket_count = st.number_input("የወጣው የዱቄት ብዛት (በጆንያ)", min_value=1, step=1)
                     submit_duket = st.form_submit_button("🌾 የዱቄት ብዛት መዝግብ")
                     
                     if submit_duket and duket_count > 0:
                         duket_label = f"🌾 ዱቄት ({duket_count} ጆንያ) ወጥቷል"
+                        # በብር ቦታ ላይ 0.0 ቁጭ ይላል (ከገንዘብ ሂሳብ ጋር እንዳይደባለቅ)
                         add_expense(duket_label, 0.0)
                         st.success(f"✅ የ {duket_count} ጆንያ ዱቄት ፍጆታ በተሳካ ሁኔታ ተመዝግቧል!")
                         st.rerun()
@@ -878,6 +924,7 @@ if check_password():
                         for exp in duket_exps:
                             c_text, c_btn = st.columns([3, 1])
                             with c_text: 
+                                # እዚህ ጋር የጆንያውን ብዛት እና ቀኑን ብቻ ያሳያል
                                 st.write(f"📦 **{exp.get('item','')}**")
                                 st.caption(f"📅 {exp.get('date','')}")
                             with c_btn:
