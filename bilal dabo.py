@@ -879,7 +879,8 @@ if check_password():
                 st.write("---")
                 st.subheader("📜 የመደበኛ ወጪዎች ዝርዝር")
                 if expenses_data.get("list"):
-                    normal_exps = [e for e in expenses_data["list"] if "🌾 ዱቄት" not in str(e.get('item',''))]
+                    # list(reversed(...)) በማድረግ አዲሱ መዝገብ ከላይ እንዲመጣ ተደርጓል
+                    normal_exps = list(reversed([e for e in expenses_data["list"] if "🌾 ዱቄት" not in str(e.get('item',''))]))
                     if normal_exps:
                         df_normal = pd.DataFrame([
                             {
@@ -924,7 +925,8 @@ if check_password():
                 st.write("---")
                 st.subheader("📜 የወጡ የዱቄት ጆንያዎች ታሪክ")
                 if expenses_data.get("list"):
-                    duket_exps = [e for e in expenses_data["list"] if "🌾 ዱቄት" in str(e.get('item',''))]
+                    # list(reversed(...)) በማድረግ አዲሱ የዱቄት መዝገብ ከላይ እንዲመጣ ተደርጓል
+                    duket_exps = list(reversed([e for e in expenses_data["list"] if "🌾 ዱቄት" in str(e.get('item',''))]))
                     if duket_exps:
                         df_duket = pd.DataFrame([
                             {
