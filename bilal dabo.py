@@ -468,7 +468,6 @@ if check_password():
         # 🛠 ቼክቦክስ - ማጠቃለያውን ለማሳየት/ለመደበቅ
         show_summary = st.checkbox("📊 የአጠቃላይ ቢዝነስ ማጠቃለያ ለማየት እዚህ ጋ ያብሩ", value=False)
         
-        # --- 📅 [ክፍል 1]፡ የሙሉ ዳቦ ቤቱ የቀን/የሳምንት/የወር ጠቅላላ ማጠቃለያ ሂሳብ (በቼክቦክስ የሚመራ) ---
         # --- 📅 [ክፍል 1]፡ የሙሉ ዳቦ ቤቱ የቀን/የሳምንት/የወር ጠቅላላ ማጠቃለያ ሂሳብ ---
         if show_summary:
             st.subheader("📅 የአጠቃላይ የቢዝነሱ የዘመን ክልል ማጠቃለያ (በኢትዮጵያ አቆጣጠር)")
@@ -502,75 +501,86 @@ if check_password():
             if s_str <= e_str:
                 st.success(f"📅 የተመረጠው ክልል፦ ከ **{s_str}** እስከ **{e_str}**")
                 
-                # ለጠቅላላ ቢዝነሱ ድምር ተለዋዋጮች
-                total_business_cash_dabo = 0
-                total_business_cash_birr = 0
-                total_business_new_dube_dabo = 0
-                
-                total_business_coll_dabo = 0
-                total_business_coll_birr = 0
-                
-                total_business_expected_birr = 0
-                total_business_actual_birr = 0
-                
-                total_business_expenses = 0
-                total_business_duket_bags = 0
-                
-                # 1. ከሁሉም ሰራተኞች ታሪክ ላይ መረጃዎችን በአንድ ላይ መደመር
+                # ቀናትን መሰረት ያደረገ የመረጃ ማደራጃ ዲክሽነሪ (Dictionary by Date)
+                daily_summary = {}
+
+                # 1. የሰራተኞችን መረጃ በቀን መደመር
                 for r in staff_history.values():
                     r_date_str = str(r.get('date', ''))[:10]
                     if s_str <= r_date_str <= e_str:
-                        total_business_cash_dabo += r.get('cash_sold_dabo', 0)
-                        total_business_cash_birr += r.get('cash_sold_birr', 0)
-                        total_business_new_dube_dabo += r.get('new_dube_dabo', 0)
+                        if r_date_str not in daily_summary:
+                            daily_summary[r_date_str] = {
+                                "morning_load": 0, "returned": 0, "cash_sold_dabo": 0,
+                                "cash_sold_birr": 0, "coll_dabo": 0, "coll_birr": 0,
+                                "new_dube_dabo": 0, "expected_birr": 0, "actual_birr": 0,
+                                "diff": 0, "expense": 0, "duket_bags": 0
+                            }
                         
-                        total_business_coll_dabo += r.get('coll_dabo', 0)
-                        total_business_coll_birr += r.get('coll_birr', 0)
-                        
-                        total_business_expected_birr += r.get('expected_birr', 0)
-                        total_business_actual_birr += r.get('actual_birr', 0)
+                        d_item = daily_summary[r_date_str]
+                        d_item["morning_load"] += r.get('morning_load', 0)
+                        d_item["returned"] += r.get('returned', 0)
+                        d_item["cash_sold_dabo"] += r.get('cash_sold_dabo', 0)
+                        d_item["cash_sold_birr"] += r.get('cash_sold_birr', 0)
+                        d_item["coll_dabo"] += r.get('coll_dabo', 0)
+                        d_item["coll_birr"] += r.get('coll_birr', 0)
+                        d_item["new_dube_dabo"] += r.get('new_dube_dabo', 0)
+                        d_item["expected_birr"] += r.get('expected_birr', 0)
+                        d_item["actual_birr"] += r.get('actual_birr', 0)
+                        d_item["diff"] += r.get('diff', 0)
 
-                # 2. ከወጪ መዝገብ ላይ ወጪና ዱቄት መደመር
+                # 2. የወጪ እና የዱቄት መረጃዎችን በቀን መደመር
                 if expenses_data.get("list"):
                     for exp in expenses_data["list"]:
                         exp_date_str = str(exp.get('date', ''))[:10]
                         if s_str <= exp_date_str <= e_str:
+                            if exp_date_str not in daily_summary:
+                                daily_summary[exp_date_str] = {
+                                    "morning_load": 0, "returned": 0, "cash_sold_dabo": 0,
+                                    "cash_sold_birr": 0, "coll_dabo": 0, "coll_birr": 0,
+                                    "new_dube_dabo": 0, "expected_birr": 0, "actual_birr": 0,
+                                    "diff": 0, "expense": 0, "duket_bags": 0
+                                }
+                            
                             item_name = str(exp.get('item', ''))
                             if "🌾 ዱቄት" in item_name:
                                 try:
                                     parts = item_name.split('(')
                                     if len(parts) > 1:
                                         num_bags = int(parts[1].split(' ')[0])
-                                        total_business_duket_bags += num_bags
+                                        daily_summary[exp_date_str]["duket_bags"] += num_bags
                                 except:
                                     pass
                             else:
-                                total_business_expenses += float(exp.get('amount', 0))
+                                daily_summary[exp_date_str]["expense"] += float(exp.get('amount', 0))
+
+                # ሰንጠረዡን ማዘጋጀት (ቀኑ ከቅርብ ወደ ቆየ እንዲደራደር reverse=True)
+                sorted_dates = sorted(daily_summary.keys(), reverse=True)
                 
-                # ካሽ ዳቦ + ከዱቤ የተሰበሰበ ዳቦ (በአንድ ላይ የተደመረ)
-                total_collected_dabo_combined = total_business_cash_dabo + total_business_coll_dabo
-                
-                st.markdown(f"##### 🏢 ከ **{s_str}** እስከ **{e_str}** የዳቦ ቤቱ አጠቃላይ የተደመረ ሂሳብ፦")
-                
-                # የመጀመሪያው ረድፍ ካርዶች
-                c1, c2, c3 = st.columns(3)
-                c1.metric("🥖 ጠቅላላ የመጣ ዳቦ (ካሽ + የድሮ ዱቤ)", f"{total_collected_dabo_combined} ዳቦ", f"ካሽ፡ {total_business_cash_dabo} | ከድሮ ዱቤ የተመለሰ፦ {total_business_coll_dabo}")
-                c2.metric("💰 ማስገባት የነበረባቸው ብር (Expected)", f"{total_business_expected_birr} ብር")
-                c3.metric("💵 በትክክል ያመጡት ብር (Actual)", f"{total_business_actual_birr} ብር")
-                
-                st.write("---")
-                # ሁለተኛው ረድፍ ካርዶች
-                c4, c5, c6 = st.columns(3)
-                c4.metric("📈 አዲስ ለደንበኞች የተሰጠ ዱቤ", f"{total_business_new_dube_dabo} ዳቦ")
-                c5.metric("💸 የወጣ ጠቅላላ መደበኛ ወጪ", f"{total_business_expenses} ብር")
-                c6.metric("🌾 የወጣ ጠቅላላ ዱቄት", f"{total_business_duket_bags} ጆንያ")
-                
-                # የትርፍና ኪሳራ ልዩነት ማሳያ
-                total_diff = total_business_actual_birr - total_business_expected_birr
-                if total_diff >= 0:
-                    st.success(f"📈 አጠቃላይ የገንዘብ ልዩነት (ትርፍ)፦ +{total_diff} ብር")
+                if sorted_dates:
+                    summary_rows = []
+                    for d in sorted_dates:
+                        val = daily_summary[d]
+                        summary_rows.append({
+                            "ቀን": d,
+                            "የወጣ ዳቦ": val["morning_load"],
+                            "የተመለሰ": val["returned"],
+                            "ካሽ (ዳቦ)": val["cash_sold_dabo"],
+                            "ካሽ (ብር)": val["cash_sold_birr"],
+                            "የተሰበሰበ ዱቤ(ዳ)": val["coll_dabo"],
+                            "አዲስ ዱቤ(ዳ)": val["new_dube_dabo"],
+                            "የተጠበቀ ብር": val["expected_birr"],
+                            "የመጣ ብር": val["actual_birr"],
+                            "ልዩነት (+/-)": val["diff"],
+                            "የቀኑ ወጪ": val["expense"],
+                            "ወጪ ዱቄት (ጆንያ)": val["duket_bags"]
+                        })
+                    
+                    df_summary = pd.DataFrame(summary_rows)
+                    st.write("---")
+                    st.markdown(f"##### 🏢 ከ **{s_str}** እስከ **{e_str}** ያለው የቀን በቀን አጠቃላይ የቢዝነስ ሰንጠረዥ፦")
+                    st.dataframe(df_summary, use_container_width=True, hide_index=True)
                 else:
-                    st.error(f"📉 አጠቃላይ የገንዘብ ጉድለት (ኪሳራ)፦ {total_diff} ብር")
+                    st.info("በተመረጠው የጊዜ ክልል ውስጥ ምንም የተመዘገበ መረጃ የለም።")
             else:
                 st.error("❌ ስህተት፡ የ 'ከቀን' መጀመሪያ ከ 'እስከ ቀን' ማነስ አለበት!")
         
