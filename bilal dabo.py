@@ -568,12 +568,12 @@ if check_password():
                         val = daily_summary[d]
                         summary_rows.append({
                             "ቀን": d,
-                            "የወጣ ዳቦ": val["morning_load"],
-                            "የተመለሰ": val["returned"],
-                            "ካሽ (ዳቦ)": val["cash_sold_dabo"],
-                            "ካሽ (ብር)": val["cash_sold_birr"],
-                            "የተሰበሰበ ዱቤ(ዳ)": val["coll_dabo"],
-                            "አዲስ ዱቤ(ዳ)": val["new_dube_dabo"],
+                            "የወሰዱት ዳቦ": val["morning_load"],
+                            "የመለሱት": val["returned"],
+                            "የሸጡት ዳቦ": val["cash_sold_dabo"],
+                            "ብር": val["cash_sold_birr"],
+                            "የተሰበሰበ ዱቤ": val["coll_dabo"],
+                            "አዲስ ዱቤ": val["new_dube_dabo"],
                             "የተጠበቀ ብር": val["expected_birr"],
                             "የመጣ ብር": val["actual_birr"],
                             "ልዩነት (+/-)": val["diff"],
