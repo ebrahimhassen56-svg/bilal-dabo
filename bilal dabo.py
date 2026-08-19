@@ -501,7 +501,7 @@ if check_password():
             if s_str <= e_str:
                 st.success(f"📅 የተመረጠው ክልል፦ ከ **{s_str}** እስከ **{e_str}**")
                 
-                # ቀናትን መሰረት ያደረገ የመረጃ ማደራጃ ዲክሽነሪ (Dictionary by Date)
+                # ቀናትን መሰረት ያደረገ የመረጃ ማደራጃ ዲክሽነሪ
                 daily_summary = {}
 
                 # 1. የሰራተኞችን መረጃ በቀን መደመር
@@ -553,11 +553,17 @@ if check_password():
                             else:
                                 daily_summary[exp_date_str]["expense"] += float(exp.get('amount', 0))
 
-                # ሰንጠረዡን ማዘጋጀት (ቀኑ ከቅርብ ወደ ቆየ እንዲደራደር reverse=True)
+                # ሰንጠረዡን ማዘጋጀት (ቀኑ ከቅርብ ወደ ቆየ እንዲደራደር)
                 sorted_dates = sorted(daily_summary.keys(), reverse=True)
                 
                 if sorted_dates:
                     summary_rows = []
+                    
+                    # ለአጠቃላይ ድምር የሚሆኑ ተለዋዋጮች
+                    tot_m_load = tot_ret = tot_cash_d = tot_cash_b = 0
+                    tot_coll_d = tot_new_dube = tot_exp_b = tot_act_b = 0
+                    tot_diff = tot_exp = tot_duket = 0
+
                     for d in sorted_dates:
                         val = daily_summary[d]
                         summary_rows.append({
@@ -574,6 +580,35 @@ if check_password():
                             "የቀኑ ወጪ": val["expense"],
                             "ወጪ ዱቄት (ጆንያ)": val["duket_bags"]
                         })
+                        
+                        # ሁሉንም ቀናት መደመር
+                        tot_m_load += val["morning_load"]
+                        tot_ret += val["returned"]
+                        tot_cash_d += val["cash_sold_dabo"]
+                        tot_cash_b += val["cash_sold_birr"]
+                        tot_coll_d += val["coll_dabo"]
+                        tot_new_dube += val["new_dube_dabo"]
+                        tot_exp_b += val["expected_birr"]
+                        tot_act_b += val["actual_birr"]
+                        tot_diff += val["diff"]
+                        tot_exp += val["expense"]
+                        tot_duket += val["duket_bags"]
+
+                    # ከስር የአጠቃላይ ቀናቶች ድምር መስመር መጨመር (Total Row)
+                    summary_rows.append({
+                        "ቀን": "∑ ጠቅላላ ድምር",
+                        "የወጣ ዳቦ": tot_m_load,
+                        "የተመለሰ": tot_ret,
+                        "ካሽ (ዳቦ)": tot_cash_d,
+                        "ካሽ (ብር)": tot_cash_b,
+                        "የተሰበሰበ ዱቤ(ዳ)": tot_coll_d,
+                        "አዲስ ዱቤ(ዳ)": tot_new_dube,
+                        "የተጠበቀ ብር": tot_exp_b,
+                        "የመጣ ብር": tot_act_b,
+                        "ልዩነት (+/-)": tot_diff,
+                        "የቀኑ ወጪ": tot_exp,
+                        "ወጪ ዱቄት (ጆንያ)": tot_duket
+                    })
                     
                     df_summary = pd.DataFrame(summary_rows)
                     st.write("---")
