@@ -637,7 +637,7 @@ if check_password():
         
         st.write("---")
         
-        # --- 📜 [ክፍል 3]፡ የሰራተኞች የዕለት ሪፖርት ዝርዝር ---
+        # --- 📜 [ክፍል 3]፡ የሰራተኞች የዕለት ሪፖርት ዝርዝር (ከነ Edit ማድረጊያው) ---
         st.header("📜 የሰራተኞች የዕለት ሪፖርት ዝርዝር")
         all_s = sorted(list(set([r['staff_name'] for r in staff_history.values() if 'staff_name' in r])))
         
@@ -673,12 +673,14 @@ if check_password():
             df_rep = pd.DataFrame(rep_rows)
             st.dataframe(df_rep, use_container_width=True)
             
-            st.subheader("📅 የዕለት ዝርዝር መረጃ")
+            st.subheader("📅 የዕለት ዝርዝር መረጃ እና ማስተካከያ (Edit/Delete)")
             for r_id, rec in staff_recs:
-                expander_title = f"📅 ሪፖርት ቀን፦ {rec.get('date','')}"
+                expander_title = f"📅 ሪፖርት ቀን፦ {rec.get('date','')} ({rec.get('staff_name','')})"
                 with st.expander(expander_title):
-                    col_info, col_del = st.columns([4, 1.5])
-                    with col_info:
+                    tab_info, tab_edit, tab_del = st.tabs(["👁 ዝርዝር መረጃ", "✏️ ማስተካከያ (Edit)", "🗑 ሰርዝ"])
+                    
+                    # 1. የዝርዝር መረጃ ታብ
+                    with tab_info:
                         if rec.get("collected_names"):
                             st.write("💵 የድሮ ዱቤ የተቀበለው፦")
                             for c_n, c_a in rec["collected_names"].items():
@@ -687,7 +689,54 @@ if check_password():
                             st.write("📦 አዲስ ዱቤ የወሰዱ፦")
                             for n_n, n_a in rec["today_dube_details"].items():
                                 st.write(f"🔸 {n_n}: {n_a} ዳቦ")
-                    with col_del:
+                        if not rec.get("collected_names") and not rec.get("today_dube_details"):
+                            st.info("ምንም ተጨማሪ የዱቤ ዝርዝር የለውም።")
+
+                    # 2. የ Edit (ማስተካከያ) ታብ
+                    with tab_edit:
+                        st.subheader("✏️ የሪፖርት መረጃ ማስተካከያ")
+                        with st.form(f"edit_form_{r_id}"):
+                            c_e1, c_e2, c_e3 = st.columns(3)
+                            with c_e1:
+                                new_morning = st.number_input("የወጣ ዳቦ", min_value=0, value=int(rec.get('morning_load', 0)))
+                                new_returned = st.number_input("የተመለሰ ዳቦ", min_value=0, value=int(rec.get('returned', 0)))
+                            with c_e2:
+                                new_actual_birr = st.number_input("የመጣ ብር (Actual)", min_value=0.0, value=float(rec.get('actual_birr', 0.0)))
+                                new_cash_dabo = st.number_input("በካሽ የተሸጠ ዳቦ", min_value=0, value=int(rec.get('cash_sold_dabo', 0)))
+                            with c_e3:
+                                new_new_dube = st.number_input("አዲስ ዱቤ (ዳቦ)", min_value=0, value=int(rec.get('new_dube_dabo', 0)))
+                                new_coll_dabo = st.number_input("ከድሮ ዱቤ የተሰበሰበ (ዳቦ)", min_value=0, value=int(rec.get('coll_dabo', 0)))
+                            
+                            save_edit = st.form_submit_button("💾 ለውጦቹን አስቀምጥ")
+                            
+                            if save_edit:
+                                # በድጋሚ ሂሳቡን ማስላት
+                                new_cash_birr = new_cash_dabo * DABO_WAGA
+                                new_coll_birr = new_coll_dabo * DABO_WAGA
+                                new_expected_birr = new_cash_birr + new_coll_birr
+                                new_diff = new_actual_birr - new_expected_birr
+                                
+                                # በስታፍ ሂሳብ መዝገብ ላይ ማስተካከል
+                                staff_history[r_id]['morning_load'] = new_morning
+                                staff_history[r_id]['returned'] = new_returned
+                                staff_history[r_id]['cash_sold_dabo'] = new_cash_dabo
+                                staff_history[r_id]['cash_sold_birr'] = new_cash_birr
+                                staff_history[r_id]['coll_dabo'] = new_coll_dabo
+                                staff_history[r_id]['coll_birr'] = new_coll_birr
+                                staff_history[r_id]['new_dube_dabo'] = new_new_dube
+                                staff_history[r_id]['expected_birr'] = new_expected_birr
+                                staff_history[r_id]['actual_birr'] = new_actual_birr
+                                staff_history[r_id]['diff'] = new_diff
+                                
+                                # Supabase/Database የምትጠቀም ከሆነ እዚህ ጋር save_data() ጥራ
+                                if 'save_data' in globals():
+                                    save_data()
+                                    
+                                st.success("✅ ሪፖርቱ በትክክል ተስተካክሏል!")
+                                st.rerun()
+
+                    # 3. የመሰረዣ ታብ
+                    with tab_del:
                         confirm_delete = st.checkbox("🗑 በእርግጠኝነት ይጥፋ?", key=f"conf_del_{r_id}")
                         if st.button("❌ ሪፖርት አጥፋ", key=f"del_staff_{r_id}", disabled=not confirm_delete):
                             delete_staff_record(r_id)
