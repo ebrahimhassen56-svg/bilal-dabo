@@ -771,17 +771,24 @@ if check_password():
                     
                     if st.button("💾 የሰራተኛ ስም አሻሽል", key="execute_staff_rename_btn"):
                         if new_staff_name and new_staff_name != old_staff_name:
+                            
+                            # በሜሞሪ ውስጥ ያሉትን የድሮ ቁልፎች (IDs) ለይቶ መያዝ
                             old_ids = [r_id for r_id, r in staff_history.items() if r.get('staff_name') == old_staff_name]
                             
                             for old_id in old_ids:
-                                r = staff_history.pop(old_id)
+                                r = staff_history.pop(old_id) # ከሜሞሪ ሙሉ በሙሉ መንቀል
                                 r['staff_name'] = new_staff_name
                                 
+                                # አዲስ መለያ ID መፍጠር
                                 time_part = old_id.split('_')[0] + "_" + old_id.split('_')[1] if len(old_id.split('_')) >= 2 else datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
                                 new_id = f"{time_part}_{new_staff_name}"
                                 
+                                # 1. አዲሱን በፋይል ላይ መጻፍ
                                 save_staff_record_single(new_id, r)
+                                # 2. የድሮውን ከፋይል ላይ ማጥፋት
                                 delete_staff_record(old_id)
+                                
+                                # 3. አዲሱን በሜሞሪ ውስጥ መመዝገብ
                                 staff_history[new_id] = r
                                     
                             st.success(f"✅ የሰራተኛ ስም ከ '{old_staff_name}' ወደ '{new_staff_name}' ተቀይሮ የድሮው ታሪክ ጠፍቷል!")
@@ -804,6 +811,8 @@ if check_password():
                     
                     if st.button("💾 የስም ማሻሻያ አውርድ", key="execute_rename_btn_opt4"):
                         if new_name and new_name != old_name:
+                            
+                            # 1. በዋናው የዱቤ መዝገብ ላይ ስሙን መቀየር/መቀላቀል
                             old_data = dube_mezgebiya.pop(old_name, None) 
                             
                             if old_data:
@@ -816,19 +825,23 @@ if check_password():
                                     
                                 save_dube_record(dube_mezgebiya) 
                             
+                            # 2. በየቀኑ የሰራተኞች ታሪክ (በፋይልም በሜሞሪም) ውስጥ የድሮውን ስም ፈንቅሎ ማጥፋት
                             for r_id, r in staff_history.items():
                                 record_changed = False
                                 
+                                # የከፈለው የድሮ ዱቤ ታሪክ ውስጥ ካለ
                                 if "collected_names" in r and old_name in r["collected_names"]:
                                     old_coll = r["collected_names"].pop(old_name, 0) 
                                     r["collected_names"][new_name] = r["collected_names"].get(new_name, 0) + old_coll
                                     record_changed = True
                                     
+                                # የዛሬ አዲስ ዱቤ ታሪክ ውስጥ ካለ
                                 if "today_dube_details" in r and old_name in r["today_dube_details"]:
                                     old_today = r["today_dube_details"].pop(old_name, 0) 
                                     r["today_dube_details"][new_name] = r["today_dube_details"].get(new_name, 0) + old_today
                                     record_changed = True
                                 
+                                # ለውጡን በፋይል ላይ መልሶ መጻፍ
                                 if record_changed:
                                     save_staff_record_single(r_id, r)
                                 
@@ -844,18 +857,12 @@ if check_password():
             
             if s_name and not matches: st.error("❌ ሰራተኛው አልተገኘም!")
             elif matches:
-                sel_day = st.selectbox("ቀን መምረጫ", range(len(matches)), format_func=lambda x: f"ቀን: {matches[x][1].get('date', 'ያልታወቀ ቀን')}")
+                sel_day = st.selectbox("ቀን መምረጫ", range(len(matches)), format_func=lambda x: f"ቀን: {matches[x][1]['date']}")
                 sel_id, sel_rec = matches[sel_day]
-                
-                # 📅 የቀን ማስተካከያ መጨመሪያ
-                current_date_val = str(sel_rec.get('date', ''))
-                new_date = st.text_input("📅 ሪፖርት የተደረገበት ቀን፦", value=current_date_val)
-                
                 sub_opt = st.selectbox("ምን መቀየር ይፈልጋሉ?", ["[1] የወሰደው (Morning Load)", "[2] የመለሰው (Returned)"])
-                val = st.number_input("አዲሱን ቁጥር ያስገቡ", min_value=0, step=1, value=int(sel_rec.get("morning_load", 0) if sub_opt.startswith("[1]") else sel_rec.get("returned", 0)))
+                val = st.number_input("አዲሱን ቁጥር ያስገቡ", min_value=0, step=1, value=int(sel_rec["morning_load"] if sub_opt.startswith("[1]") else sel_rec["returned"]))
                 
                 if st.button("✅ መረጃ አስተካክል"):
-                    sel_rec["date"] = new_date # ቀኑን የማዘመን ስራ
                     if sub_opt.startswith("[1]"): sel_rec["morning_load"] = val
                     else: sel_rec["returned"] = val
                     
@@ -863,7 +870,7 @@ if check_password():
                     sel_rec["cash_sold_dabo"] = total_out - sel_rec.get("new_dube_dabo", 0)
                     sel_rec["cash_sold_birr"] = sel_rec["cash_sold_dabo"] * DABO_WAGA
                     sel_rec["expected_birr"] = sel_rec["cash_sold_birr"] + sel_rec.get("coll_birr", 0)
-                    sel_rec["diff"] = sel_rec.get("actual_birr", 0) - sel_rec["expected_birr"]
+                    sel_rec["diff"] = sel_rec["actual_birr"] - sel_rec["expected_birr"]
                     
                     save_staff_record_single(sel_id, sel_rec)
                     st.success("✅ በተሳካ ሁኔታ ተስተካክሏል!")
@@ -876,21 +883,15 @@ if check_password():
             
             if s_name and not matches: st.error("❌ ሰራተኛው አልተገኘም!")
             elif matches:
-                sel_day = st.selectbox("ቀን መምረጫ", range(len(matches)), format_func=lambda x: f"ቀን: {matches[x][1].get('date', 'ያልታወቀ ቀን')}")
+                sel_day = st.selectbox("ቀን መምረጫ", range(len(matches)), format_func=lambda x: f"ቀን: {matches[x][1]['date']}")
                 sel_id, sel_rec = matches[sel_day]
-                
-                # 📅 የቀን ማስተካከያ መጨመሪያ
-                current_date_val = str(sel_rec.get('date', ''))
-                new_date = st.text_input("📅 ሪፖርት የተደረገበት ቀን፦", value=current_date_val)
-                
-                new_actual = st.number_input("ትክክለኛውን ብር ያስገቡ", min_value=0.0, value=float(sel_rec.get("actual_birr", 0.0)))
+                new_actual = st.number_input("ትክክለኛውን ብር ያስገቡ", min_value=0.0, value=float(sel_rec["actual_birr"]))
                 
                 if st.button("✅ ብር አስተካክል"):
-                    sel_rec["date"] = new_date # ቀኑን የማዘመን ስራ
                     sel_rec["actual_birr"] = new_actual
                     sel_rec["diff"] = new_actual - sel_rec.get("expected_birr", 0)
                     save_staff_record_single(sel_id, sel_rec)
-                    st.success("✅ ያስረከበው ብር እና ቀኑ ተስተካክሏል!")
+                    st.success("✅ ያስረከበው ብር ተስተካክሏል!")
                     st.rerun()
 
         # --- [1] የደንበኛ የዱቤ ሂሳብ ለመቀየር ---
@@ -901,12 +902,8 @@ if check_password():
             
             if s_name and not matches: st.error("❌ ሰራተኛው አልተገኘም!")
             elif matches and name:
-                sel_day = st.selectbox("ቀን መምረጫ", range(len(matches)), format_func=lambda x: f"ቀን: {matches[x][1].get('date', 'ያልታወቀ ቀን')}")
+                sel_day = st.selectbox("ቀን መምረጫ", range(len(matches)), format_func=lambda x: f"ቀን: {matches[x][1]['date']}")
                 sel_id, sel_rec = matches[sel_day]
-                
-                # 📅 የቀን ማስተካከያ መጨመሪያ
-                current_date_val = str(sel_rec.get('date', ''))
-                new_date = st.text_input("📅 ሪፖርት የተደረገበት ቀን፦", value=current_date_val)
                 
                 if "today_dube_details" not in sel_rec: sel_rec["today_dube_details"] = {}
                 if "collected_names" not in sel_rec: sel_rec["collected_names"] = {}
@@ -918,7 +915,6 @@ if check_password():
                 amt = st.number_input("ትክክለኛውን የዳቦ ብዛት ያስገቡ", min_value=0, step=1, value=int(current_val))
                 
                 if st.button("⚙️ የደንበኛ ዱቤ አስተካክል"):
-                    sel_rec["date"] = new_date # ቀኑን የማዘመን ስራ
                     if opt.startswith("[1]"):
                         old_v = sel_rec["today_dube_details"].get(name, 0)
                         sel_rec["today_dube_details"][name] = amt
@@ -933,16 +929,17 @@ if check_password():
                         if name not in dube_mezgebiya: dube_mezgebiya[name] = {'original':0, 'paid':0, 'yedere_dube':0}
                         dube_mezgebiya[name]['yedere_dube'] -= (amt - old_v)
                         
-                    total_out = sel_rec.get("morning_load", 0) - sel_rec.get("returned", 0)
+                    total_out = sel_rec["morning_load"] - sel_rec["returned"]
                     sel_rec["cash_sold_dabo"] = total_out - sel_rec.get("new_dube_dabo", 0)
                     sel_rec["cash_sold_birr"] = sel_rec["cash_sold_dabo"] * DABO_WAGA
                     sel_rec["expected_birr"] = sel_rec["cash_sold_birr"] + sel_rec.get("coll_birr", 0)
-                    sel_rec["diff"] = sel_rec.get("actual_birr", 0) - sel_rec["expected_birr"]
+                    sel_rec["diff"] = sel_rec["actual_birr"] - sel_rec["expected_birr"]
                     
                     save_dube_record(dube_mezgebiya)
                     save_staff_record_single(sel_id, sel_rec)
-                    st.success("✅ ሂሳቡና ቀኑ በተሳካ ሁኔታ ተስተካክሏል!")
+                    st.success("✅ ሂሳቡ በተሳካ ሁኔታ ተስተካክሏል!")
                     st.rerun()
+
     # --- 💸 [6] ወጪ መመዝገቢያ ---
     # --- 💸 [6] ወጪ መመዝገቢያ ---
     elif "ወጪ" in choice:
