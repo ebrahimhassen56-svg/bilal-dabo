@@ -87,7 +87,7 @@ def get_ethiopian_datetime():
     
     # ውጤት፡ ዓመት-ወር-ቀን ሰዓት (ምሳሌ፡ 2018-10-30 11:15)
     return f"{eth_year}-{eth_month:02d}-{eth_day:02d} {time_str}"
-DABO_WAGA = 13.50
+DABO_WAGA = 9
 
 # --- 🌐 SUPABASE CLOUD DATABASE CONFIG ---
 SUPABASE_URL = "https://fcerzqxtdrlfrtqjubvz.supabase.co"
