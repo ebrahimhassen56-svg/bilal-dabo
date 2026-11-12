@@ -455,7 +455,7 @@ if check_password():
                     data['original'] = 0; data['paid'] = 0
                     
                 save_dube_record(dube_mezgebiya)
-                save_staff_record_single(rec_id, staff_history[rec_id])
+save_staff_record_single(rec_id, staff_history[rec_id]) # የሰራተኛውን ሪፖርት ወደ Supabase/File የሚልከው ዋናው መስመር ይሄ ነው።
                 st.session_state.closing_new_dube = [{"name": "", "amt": 0}]
                 st.success(f"✅ {s_name} የዛሬ ሂሳብ እና ወጪ በተሳካ ሁኔታ ተመዝግቧል!")
                 st.rerun()
