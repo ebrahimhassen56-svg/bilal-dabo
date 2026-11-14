@@ -77,8 +77,8 @@ def get_ethiopian_datetime():
 DABO_WAGA = 9
 
 # --- 🌐 ትክክለኛው አዲሱ የ SUPABASE ዳታቤዝ አድራሻ እና ቁልፍ ---
-SUPABASE_URL = "https://fcerzqxtdrlfrtqjubvz.supabase.co"
-SUPABASE_KEY = "sb_publishable_J3ZTXdoo6e3y7RYd44p6SA_PZmtVYdg"
+SUPABASE_URL = "https://zchpkeokvvhrinakhanm.supabase.co"
+SUPABASE_KEY = "sb_publishable_3kndf6h3ROVt_YtgJGiIMQ_8Y_SH"
 
 HEADERS = {
     "apikey": SUPABASE_KEY,
@@ -489,7 +489,7 @@ if check_password():
                     "diff": float(actual_birr - expected)
                 }
                 
-                # መጀመሪያ ሪፖርቱን በቅድሚያ ወደ ዳታቤዝ መላክ
+                # ሪፖርቱን በቅድሚያ ወደ ዳታቤዝ መላክ
                 staff_history[rec_id] = new_record
                 saved_successfully = save_staff_record_single(rec_id, staff_history[rec_id])
                 
