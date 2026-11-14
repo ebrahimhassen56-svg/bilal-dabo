@@ -489,7 +489,7 @@ if check_password():
                     "diff": float(actual_birr - expected)
                 }
                 
-                # መጀመሪያ ሪፖርቱን ማስቀመጥ (ቅድሚያ ለሪፖርት ምዝገባ)
+                # መጀመሪያ ሪፖርቱን በቅድሚያ ወደ ዳታቤዝ መላክ
                 staff_history[rec_id] = new_record
                 saved_successfully = save_staff_record_single(rec_id, staff_history[rec_id])
                 
